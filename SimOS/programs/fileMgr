@@ -1,0 +1,66 @@
+local tArgs = {...}
+if tArgs[2]=="-select" then
+  table.insert(tArgs, table.remove(tArgs), 1)
+end
+local ori = #system.get("programs")
+local path = (tArgs[2] or tArgs[1]) or ""
+if path=="-select" then
+  path = ""
+end
+local set = system.get("fileMgr")
+if tArgs[1]=="-select" then
+  set.proguf[1]="Select this file"
+end
+while true do
+  local fl = fs.list(path)
+  if path ~= "" then 
+    table.insert(fl, 1, "..") 
+  end
+  table.insert(fl, "New...")
+  table.insert(fl, "Exit")
+  local n = system.drawMenu(fl, "Directory of "..path..":\n")
+  if n==#fl then 
+    break
+  elseif n==#fl-1 and fs.isReadOnly(path)==false then
+    n = system.drawMenu({"New file","New folder", "Cancel"}, "Create new in directory "..path..":\n")
+    if n==2 then
+      write("Folder Name:")
+      local input = read()
+      if not fs.exists(fs.combine(path,input)) then
+        fs.makeDir(fs.combine(path,input))
+      else 
+        printError("Folder exists.") 
+        sleep(1) 
+      end
+    elseif n==1 then
+      write("File name:")
+      local input = read()
+      if not fs.exists(fs.combine(path,input)) then
+        fs.open(fs.combine(path,input), "w").close()
+      else 
+        printError("File exists.") 
+        sleep(1) 
+      end
+    end
+  else
+    if fs.isDir(fs.combine(path,fl[n])) then
+      path = fs.combine(path, fl[n])
+    else 
+      local act = system.drawMenu(set.proguf,fs.combine(path, fl[n]).."\n")
+      if tArgs[1]=="-select" and act==1 then
+        return ("/"..fs.combine(path, fl[n]))
+      elseif set.prog[act]=="$ADDPROG" then
+        local progs = system.get("programs")
+        write("Name of program:")
+        table.insert(progs, {read(), "/"..fs.combine(path,fl[n]), "rmlistentry"})
+        system.set("programs", progs)
+      else
+        shell.run(string.gsub(set.prog[act], "$PATH", "/"..fs.combine(path, fl[n])))
+      end 
+    end 
+  end 
+end
+if ori<#system.get("programs") then
+  system.saveSettings()
+end
+set.proguf[1]="Run"
