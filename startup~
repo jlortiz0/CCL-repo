@@ -1,8 +1,0 @@
---Any errors from line 1 are considered fatal, so we can't have code there
-rednet.open("top")
-shell.setAlias("del", "delete")
-shell.setPath(shell.path()..":/path")
-for _,v in pairs(fs.list("/apis/")) do
-local h = os.loadAPI("/apis/"..v)
-if not h then printError("Api "..v.." failed to load!") end
-end
