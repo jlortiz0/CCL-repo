@@ -1,0 +1,25 @@
+if not os.user then
+print("Not logged in.")
+return
+end
+if os.user == "guest" then
+print("Cannot run as guest.")
+return
+end
+write("Current Password:")
+local h = fs.open("/secacct/"..os.user.."/.password", "r")
+if not read("*") == h.readAll() then
+h.close()
+print("Password incorrect.")
+return end
+h.close()
+write("New Password:")
+local pass = read("*")
+write("Confirm new password:")
+if pass==read("*") then
+local h = fs.open("/secacct/"..os.user.."/.password", "w")
+h.write(pass)
+h.close()
+else 
+print("Passwords do not match.")
+end
