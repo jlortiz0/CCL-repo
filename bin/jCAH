@@ -1,0 +1,243 @@
+print("jlortiz's Cards Against Humanity")
+table.random = function(tab) 
+return tab[math.ceil(math.random()*#tab)]
+end
+
+local function menu(men, txt, n)
+n=n or 1
+if type(men) ~= "table" then return end
+while true do
+term.clear()
+term.setCursorPos(1,1)
+if txt then print(txt) end
+for i=1, #men do
+if i==n then print("->["..men[i].."]")
+else
+print(men[i])
+if i>15 then break
+end end end
+local _, key = os.pullEvent("key")
+if key==200 and n>1 then n=n-1
+elseif key==208 and n<#men then n=n+1
+elseif key==28 then return n
+end end end
+
+local choice = menu({"New Deck", "Edit Deck", "Host Game", "Join Game", "Exit"})
+if choice==5 then return
+elseif choice==1 then
+write("Name of deck:")
+local name = read()
+if fs.exists(shell.resolve(name..".jcah")) then
+printError("Deck already exists.")
+return end
+name = fs.open(shell.resolve(name..".jcah"), "w")
+name.write(textutils.serialise({"JCAH deck", {}, {}}))
+name.close()
+print("Deck created.")
+elseif choice==2 then
+write("Name of deck:")
+local dack = read()..".jcah"
+if not fs.exists(shell.resolve(dack)) then
+printError("Deck not found")
+return end
+local h = fs.open(shell.resolve(dack), "r")
+deck = textutils.unserialise(h.readAll())
+h.close()
+if type(deck) ~= "table" or deck[1] ~= "JCAH deck" then
+printError("Not a deck.")
+end
+while true do
+choice = menu({"New Black Card", "New White Card", "Delete Black Card", "Delete White Card", "Save and Exit", "Exit without saving"})
+if choice==6 then return
+elseif choice==5 then
+h=fs.open(shell.resolve(dack), "w")
+h.write(textutils.serialise(deck))
+h.close()
+return
+elseif choice==1 then
+write("Black card text:")
+table.insert(deck[2], read())
+elseif choice==2 then
+write("White card text:")
+table.insert(deck[3], read())
+elseif choice==3 then
+table.insert(deck[2], 1, "Cancel")
+choice=menu(deck[2], "Black card to remove:")
+if choice>1 then table.remove(deck[2], choice) end
+table.remove(deck[2], 1)
+elseif choice==4 then
+table.insert(deck[3], 1, "Cancel")
+choice=menu(deck[3], "White card to remove:")
+if choice>1 then table.remove(deck[3], choice) end
+table.remove(deck[3], 1)
+end end
+elseif choice==3 then
+local players = {}
+local function sendAllPlayers(msg)
+for i=1, #players do
+rednet.send(players[i][2], msg, "jCAH")
+end end
+
+local decks = {"Play", "Add deck..."}
+while true do
+local n = menu(decks, "Select decks to use")
+if n==1 then break
+elseif n==#decks then
+write("Input name of deck:")
+local dack = read()
+if fs.exists(shell.resolve(dack..".jcah")) then
+table.insert(decks, #decks, dack)
+print("Loaded!")
+sleep(1)
+end
+else
+table.remove(decks, n)
+end end
+
+table.remove(decks)
+table.remove(decks, 1)
+local deck = {{},{}}
+for i=1, #decks do
+local h = fs.open(shell.resolve(decks[i]..".jcah"), "r")
+local tab = textutils.unserialise(h.readAll())
+h.close()
+if type(tab)=="table" and tab[1]=="JCAH deck" then
+for i=1, #tab[2] do
+table.insert(deck[1], tab[2][i])
+end
+for i=1, #tab[3] do
+table.insert(deck[2], tab[3][i])
+end end end
+decks = nil
+
+local function gameJoinFunc()
+while true do
+local id, msg = rednet.receive("jCAH")
+if type(msg)=="table" and msg[1]=="join" then
+table.insert(players, {msg[2], id})
+rednet.send(id, "joined", "jCAH")
+print(msg[2].." joined from "..id)
+end end end
+
+print("Have people join with code "..os.getComputerID())
+print("Waiting for players, press any key to start game.")
+parallel.waitForAny(function() os.pullEvent("key") end, gameJoinFunc)
+sendAllPlayers({"starting", deck[2]})
+sleep(1)
+
+local function tableContains(tab, thing)
+for _,v in ipairs(tab) do
+if thing==v then return true
+end end end
+
+local function getGameAnswers(czar)
+local answers = {{},{}}
+for i=1, #players-1 do
+if #players<2 then return end
+local id, msg = rednet.receive("jCAH")
+if type(msg)=="table" then
+if msg[1]=="play" and table.contains(players,{msg[3],id})  then
+table.insert(answers[1], msg[2])
+table.insert(answers[2], msg[3])
+print(msg[3].." submitted answer")
+elseif msg[1]=="dc" then
+for i=1, #players do
+if players[i]==msg[2] then
+if table.remove(players, i)==czar then
+return false
+end end end end 
+else i=i+1
+end end
+return answers
+end
+
+local czar = 0
+while true do
+czar = czar + 1
+if czar > #players then czar = 1 end
+if #players==0 then break end
+local black = table.random(deck[1])
+print(black)
+sendAllPlayers({"black", black, players[czar][1]})
+local ans = getGameAnswers(czar)
+if not ans then sendAllPlayers("czardc")
+else
+sendAllPlayers(ans)
+while true do
+local id, msg = rednet.receive("jCAH")
+if id==players[czar][2] then 
+sendAllPlayers(msg) 
+print(ans[2][msg].." won with "..ans[1][msg])
+break
+end end end
+sleep(5)
+end
+elseif choice==4 then
+print("Please input username and code to join:")
+local un=read()
+local sid = tonumber(read())
+rednet.send(sid, {"join", un}, "jCAH")
+local _, msg = rednet.receive("jCAH", 5)
+if msg ~= "joined" then printError("Could not connect.") return end
+print("Waiting for game to start...")
+repeat
+_, msg = rednet.receive("jCAH")
+until type(msg)=="table" and msg[1]=="starting"
+local deck = msg[2]
+local hand = {}
+for i=1, 9 do
+table.insert(hand, table.random(deck))
+end
+
+local function getEvents()
+while true do
+local event, par1, par2, par3 = os.pullEventRaw()
+if event=="terminate" then
+print("Goodbye!")
+rednet.send(sid, {"dc", un}, "jCAH")
+os.queueEvent("terminate")
+sleep(1)
+elseif event=="rednet_message" and par3=="jCAH" and par1 == sid then
+return par2
+end end end
+
+local winner, ans
+while true do
+term.clear()
+term.setCursorPos(1,1)
+table.insert(hand, table.random(deck))
+local msg=getEvents()
+if type(msg)=="table" then
+if msg[1]=="black" then
+local black = msg[2]
+if un==msg[3] then
+print(black)
+print("You are the Card Czar.")
+print("Waiting for players...")
+ans=getEvents()
+winner = menu(ans[1], "Pick a card...\n"..black)
+rednet.send(sid, winner, "jCAH")
+else
+rednet.send(sid, {"play",hand[menu(hand, black)], un}, "jCAH") 
+print("Waiting for players...")
+ans=getEvents()
+term.clear()
+term.setCursorPos(1,1)
+print("This round's cards:")
+print(table.concat(ans[1], "\n"))
+print("The Card Czar is deciding...")
+winner = getEvents()
+end
+term.clear()
+term.setCursorPos(1,1)
+for i=1, #ans[2] do
+if winner==i then
+print("[*] "..ans[1][i].." ("..ans[2][i]..")")
+else
+print(ans[1][i].." ("..ans[2][i]..")")
+end end 
+print("Next round begins in 5 secods...")
+sleep(5)
+end end
+end end
+

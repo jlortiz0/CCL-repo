@@ -1,0 +1,240 @@
+local tArgs = {...}
+local function printUsage()
+print("Usage:")
+print("jKahoot new <file>")
+print("jKahoot edit <file>")
+print("jKahoot play <file>")
+print("jKahoot join <code>")
+end
+if #tArgs<2 then printUsage() return end
+print("jlortiz's Kahoot")
+if tArgs[1]=="new" then
+local file = tArgs[2]..".kh"
+if fs.exists(shell.resolve(file)) then
+printError("File exists. Try jKahoot edit "..tArgs[2]) return end
+h=fs.open(shell.resolve(file), "w")
+h.writeLine(textutils.serialise({"kahoot"}))
+h.close()
+shell.run("jKahoot edit "..tArgs[2])
+return
+
+elseif tArgs[1] == "edit" then
+print("Loading editor...")
+local saved = 1
+if not string.match(tArgs[2], ".kh") then
+file = shell.resolve(tArgs[2]..".kh")
+else file = shell.resolve(tArgs[2]) end
+if not fs.exists(file) then
+printError("File not found.")
+return end
+print("Loading file...")
+local fileh=fs.open(file, "r")
+local fat = textutils.unserialise(fileh.readAll())
+fileh.close()
+while true do
+shell.run("clear")
+print("Editing "..file)
+print("[1] New Question")
+print("[2] Remove Question")
+print("[3] Save")
+print("[4] Exit")
+local input = read()
+
+if input == "4" then 
+if not saved then
+printError("Please save first or try again to skip saving.")
+saved = 1
+sleep(2)
+else break end end
+
+if input == "3" then
+local fileh = fs.open(file,"w")
+fileh.writeLine(textutils.serialise(fat))
+fileh.close()
+print("Saved")
+saved = 1
+sleep(1)
+end
+
+if input == "1" then
+write("Question:")
+table.insert(fat, {})
+table.insert(fat[#fat], read())
+print("Blank answer choices will be skipped.")
+for i = 1,4 do 
+write("Answer Choice "..i..":")
+local ip = read()
+if ip == ""  then 
+else table.insert(fat[#fat], ip)
+end end
+write("Which answer is right(1-4)?:")
+table.insert(fat[#fat], read())
+saved = nil
+end
+
+if input == "2" then
+for i=2,#fat do
+print("["..i.."] "..fat[i][1])
+end
+write("Which one?:")
+local n = tonumber(read())
+if fat[n] then table.remove(fat, n)
+saved = nil end
+end
+end
+
+elseif tArgs[1] == "play" then
+
+print("Loading file...")
+
+fileh = fs.open(tArgs[2], "r")
+if not fileh then printError("File not found, try adding .kh at the end") return end
+local fat = textutils.unserialise(fileh.readAll())
+fileh.close()
+if not type(fat)=="table" or not fat[1]=="kahoot" then
+printError("Not a jKahoot file.")
+return end
+table.remove(fat, 1)
+
+print("Loading functions...")
+
+local function sendAllPlayers(thing)
+for _,v in pairs(players) do
+rednet.send(v[1], thing, "kahoot")
+end
+end
+
+local function getQuestionReplies()
+for p=1, #players do
+local id, msg = rednet.receive("kahoot")
+for i=1, #players do
+if players[i][1]==id then
+table.insert(players[i][3], msg)
+break
+end
+if i == #players then 
+printError("Recived answer from "..id..", but they were not in the game.") 
+i=i-1
+end end end end
+
+local function tim(time)
+local x,y=term.getCursorPos()
+for t=0,time-1 do
+term.setCursorPos(x,y)
+write(time-t)
+sleep(1)
+if time-t == 10 then
+term.setCursorPos(x,y)
+write("  ")
+term.setCursorPos(x,y)
+end end
+term.setCursorPos(x,y)
+end
+
+local function wait20()
+tim(20)
+end
+
+local function gameStart()
+--Now we actually start asking questions!
+sendAllPlayers(#fat)
+write("Game starts in ")
+tim(5)
+for ques = 1, #fat do
+shell.run("clear")
+print("Question number "..ques)
+local qtab=fat[ques]
+print(qtab[1])
+local old = qtab[#qtab]
+table.remove(qtab)
+sendAllPlayers(qtab)
+write("Answer in ")
+tim(5)
+print("0")
+for i=2, #qtab do
+if qtab[i] then
+print("["..(i-1).."] "..qtab[i])
+end
+end
+parallel.waitForAny(wait20, getQuestionReplies)
+print("")
+table.insert(qtab, old)
+print("The correct answer was number "..qtab[#qtab])
+sendAllPlayers(qtab[#qtab])
+write("Moving on in ")
+tim(3)
+print("0")
+end
+end
+
+local function lobbyJoin()
+while true do
+local id, msg = rednet.receive("kahoot")
+table.insert(players, {id, msg, {}})
+print(msg.." has joined with ID "..id)
+rednet.send(id, "joined", "kahoot")
+end
+end
+
+print("Loaded!")
+print("Have participants join with code "..os.getComputerID())
+players={}
+print("Press enter to start the game.")
+parallel.waitForAny(read, lobbyJoin)
+gameStart()
+print("The quiz is over. Thanks for playing!")
+
+else if tArgs[1] == "join" then
+
+local function time(ti)
+local x,y = term.getCursorPos()
+for t=0, ti-1 do
+write(ti-t)
+sleep(1)
+term.setCursorPos(x,y)
+end
+term.setCursorPos(x,y)
+end
+
+local function wait20()
+sleep(20)
+end
+
+local function getAnswer()
+write("Pick one:")
+rednet.send(tonumber(tArgs[2]), read(), "kahoot")
+print("Answer accepted.")
+end
+
+local id = tonumber(tArgs[2])
+shell.run("clear")
+print("Choose a nickname:")
+rednet.send(id, read(), "kahoot")
+local _, msg = rednet.receive("kahoot", 10)
+if not msg then printError("No response.") return end
+print("You are in the game.")
+local _, qnum = rednet.receive("kahoot")
+print("This quiz has "..qnum.." questions.")
+write("Starting in ")
+time(5)
+for q=1,qnum do
+shell.run("clear")
+local _, qtab = rednet.receive("kahoot", 10)
+print(qtab[1])
+write("Answer in ")
+time(5)
+print("0")
+for i=2, #qtab do
+if qtab[i] then
+print("["..(i-1).."] "..qtab[i])
+end
+end
+parallel.waitForAny(getAnswer, wait20)
+local _, msg = rednet.receive("kahoot", 20)
+print("The correct answer was number "..msg)
+write("Next question in ")
+time(3)
+end
+print(" ")
+print("The quiz is over, thanks for playing!")
+else printUsage() end
