@@ -1,0 +1,39 @@
+{
+  programs = {
+    {
+      "Control Panel",
+      "control",
+      "nope",
+    },
+    {
+      "File Manager",
+      "fileMgr",
+      "nope",
+    },
+    {
+      "Lua",
+      "/rom/programs/lua",
+      "rmlistentry",
+    },
+  },
+  endwait = 2,
+  fileMgr = {
+    proguf = {
+      "Run",
+      "Edit",
+      "Add as program",
+      "Delete",
+      "Lua IDE",
+      "Cancel",
+    },
+    prog = {
+      "$PATH",
+      "edit $PATH",
+      "$ADDPROG",
+      "rm $PATH",
+      "/path/ide",
+      "shell exit",
+    },
+  },
+  apass = "password",
+}

@@ -1,0 +1,24 @@
+if ... then
+local file = shell.resolve(...)
+if not fs.exists(file) then
+printError("No such file.")
+return end
+
+local function getSize(fi)
+if fs.isDir(fi) then
+local i = 0
+for _,v in pairs(fs.list(fi)) do
+i = i + getSize(fs.combine(fi,v))
+end return i
+else return fs.getSize(fi)
+end end
+
+if getSize(file) < 1000 then
+print("Size of "..file.." is "..getSize(file).."B.")
+else
+print("Size of "..file.." is "..(math.floor(getSize(file)/100)/10).."KB.")
+end
+
+else
+print("Usage: size <file>")
+end

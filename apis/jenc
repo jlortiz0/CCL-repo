@@ -1,0 +1,34 @@
+--This is a library, use os.loadAPI to start using it
+--Made by jlortiz
+function encrypt(str,pass)
+local done, temp = ""
+local passplace = 1
+for i=1, #str do
+temp = string.byte(string.sub(str, i, i))+string.byte(string.sub(pass, passplace, passplace))
+done=done..string.char(temp)
+if passplace==#pass then passplace=0 end
+passplace = passplace + 1
+end
+return done
+end
+
+function decrypt(str,pass)
+local done, temp=""
+local passplace = 1
+for i=1, #str do
+temp = string.byte(string.sub(str, i, i))-string.byte(string.sub(pass, passplace, passplace))
+done=done..string.char(temp)
+if passplace==#pass then passplace=0 end
+passplace=passplace+1
+end
+return done
+end
+
+function help()
+print("encryptlib.decrypt(string enc, string pass)")
+print("Tries to decrypt a string with the given password. May crash if the password is wrong.")
+print("")
+print("encryptlib.encrypt(string str, string pass)")
+print("Encrypts the string with the given password. Output will likely be unreadable by humans.")
+print("")
+end

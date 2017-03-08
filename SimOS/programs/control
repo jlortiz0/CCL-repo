@@ -1,0 +1,63 @@
+local DM = system.drawMenu
+local n = 1
+while true do
+  n=DM({"Program Remover", "File Manager Settings", "Exit"}, "Control Panel\n", n)
+  if n==3 then break
+  elseif n==1 then
+    while true do
+      n=1
+      local progs = system.get("programs")
+      local active = {}
+      for i=1,#progs do
+        table.insert(active, progs[i][1])
+      end
+      table.insert(active, "Exit")
+      n=DM(active, "Select Program to remove:\n", n)
+      if n==#active then 
+        break
+      else
+        active = DM({"Remove", "Cancel"}, "Remove program "..progs[n][1].." ?\n")
+        if active==1 then
+          if progs[n][3] == "rmlistentry" then
+            table.remove(progs, n)
+          elseif progs[n][3] == "nope" then
+            print("Cannot remove this program.")
+            sleep(1)
+          else
+            shell.run(progs[n][3])
+            table.remove(progs, n)
+          end
+          system.set("programs", progs)
+        end 
+      end 
+    end
+  elseif n==2 then
+    n=1
+    while true do
+      local set = system.get("fileMgr")
+      local tmp = {table.unpack(set.proguf)}
+      table.insert(tmp, "New..")
+      table.insert(tmp, "Exit")
+      n=DM(tmp, "Select an option to remove it:\n")
+      if n<5 or n==#set.proguf then
+        print("Cannot remove that option.")
+        sleep(1)
+      elseif n<#set.proguf then
+        table.remove(set.proguf, n)
+        table.remove(set.prog, n)
+        system.set("fileMgr", set)
+      elseif n==#set.proguf+1 then
+        print("You will now use the file manager to select a program file.")
+        print("Press any key to continue...")
+        os.pullEvent("key")
+        table.insert(set.prog, #set.prog, loadfile(system.dir.."/programs/fileMgr", _ENV)("-select"))
+        print("Name of program "..fs.getName(set.prog[#set.prog-1]))
+        table.insert(set.proguf, #set.proguf, read())
+        system.set("fileMgr", set)
+      else
+        break
+      end
+    end
+  end
+end
+system.saveSettings()
