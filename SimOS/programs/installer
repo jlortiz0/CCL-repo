@@ -9,7 +9,7 @@ if n==1 then
     print("Please type in the install dir:")
     write("/")
     local idir = "/"..read().."/SimOS/"
-    if system.drawMenu({"Yes", "No"}, "SimOS will be installed in "..idir..".\n)==1 then break end
+    if system.drawMenu({"Yes", "No"}, "SimOS will be installed in "..idir..".\n")==1 then break end
   end
   local options = {{true, true, true, false}, {"Help files and other documentation", "Custom disk bootloader", "Run on computer start", "24 hour time"}}
   local n=1
