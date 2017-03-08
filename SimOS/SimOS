@@ -1,16 +1,16 @@
 term.clear()
 term.setCursorPos(1,1)
 system = {}
-system.mainFile = "/"..fs.find("*/SimOS")[1]
+system.mainFile = "/"..fs.find("*/SimOS/SimOS")[1]
 if ...=="-safe" then 
   system.safemode=true
   print("Safemode active.") 
 end 
 system.dir = "/"..fs.combine(system.mainFile, "..")
-function system.drawMenu(menu, pt)
+function system.drawMenu(menu, pt, n)
   if not menu then return end
   pt=pt or ""
-  local n=1
+  n=n or 1
   local len = #menu
   while true do
     term.clear()
