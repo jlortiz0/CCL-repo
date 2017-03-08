@@ -5,10 +5,12 @@ end
 
 local n = system.drawMenu({"Install", "Don't"}, "This program will install SimOS on your computer.\nProceed?\n")
 if n==1 then
-  print("Please type in the install dir:")
-  write("/")
-  local idir
-  parallel.waitForAll(function() idir=read() end, function() os.queueEvent("paste", "SimOS/") end)
+  while true do
+    print("Please type in the install dir:")
+    write("/")
+    local idir = "/"..read().."/SimOS/"
+    if system.drawMenu({"Yes", "No"}, "SimOS will be installed in "..idir..".\n)==1 then break end
+  end
   local options = {{true, true, true, false}, {"Help files and other documentation", "Custom disk bootloader", "Run on computer start", "24 hour time"}}
   local n=1
   while true do
@@ -31,7 +33,7 @@ if n==1 then
   end
   options = options[1]
   if options[1] then
-    shell.run("copy /"..system.dir.."/help /"..idir.."/help")
+    shell.run("copy "..system.dir.."/help /"..idir.."/help")
   end
   if options[2] then
     shell.run("set shell.allow_disk_startup false")
@@ -39,7 +41,7 @@ if n==1 then
   if options[3] then
     shell.run("set shell.allow_startup true")
     local h = fs.open("/startup","a")
-    h.writeLine("\n--Start SimOS\nshell.run(/"..idir.."/SimOS)")
+    h.writeLine("\n--Start SimOS\nshell.run("..idir.."/SimOS)")
     h.close()
   end
   local h = fs.open(system.dir.."/registry", "r")
@@ -48,6 +50,7 @@ if n==1 then
   if options[4] then
     reg.24hr = true
   end
+  table.remove(registry.programs, 1)
   while true do
     print("You need to set an administrator password:")
     local pass = read("*")
@@ -60,7 +63,8 @@ if n==1 then
     end
   end
   fs.copy(system.dir.."/SimOS", idir.."/SimOS")
-  shell.run("copy /"..system.dir.."/programs /"..idir.."/programs")
+  shell.run("copy "..system.dir.."/programs /"..idir.."/programs")
+  fs.delete(idir.."/programs/installer")
   fs.makeDir(idir.."/startup")
   h = fs.open(idir.."/registry", "w")
   h.write(textutils.serialize(registry))
