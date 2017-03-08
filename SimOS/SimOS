@@ -7,10 +7,10 @@ if ...=="-safe" then
   print("Safemode active.") 
 end 
 system.dir = "/"..fs.combine(system.mainFile, "..")
-function system.drawMenu(menu, pt)
+function system.drawMenu(menu, pt, n)
   if not menu then return end
   pt=pt or ""
-  local n=1
+  n=n or 1
   local len = #menu
   while true do
     term.clear()
