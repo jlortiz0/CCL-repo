@@ -2,6 +2,9 @@ rednet.open("top")
 shell.setAlias("del", "delete")
 shell.setPath(shell.path()..":/path")
 for _,v in pairs(fs.list("/apis/")) do
-local h = os.loadAPI("/apis/"..v)
-if not h then printError("Api "..v.." failed to load!") end
+  local h = os.loadAPI("/apis/"..v)
+  if h==false then 
+    print("Press any key to continue...")
+    os.pullEvent("key")
+  end
 end
