@@ -11,6 +11,7 @@ local set = system.get("fileMgr")
 if tArgs[1]=="-select" then
   set.proguf[1]="Select this file"
 end
+local n = 1
 while true do
   local fl = fs.list(path)
   if path ~= "" then 
@@ -18,7 +19,7 @@ while true do
   end
   if not fs.isReadOnly(path) then table.insert(fl, "New...") end
   table.insert(fl, "Exit")
-  local n = system.drawMenu(fl, "Directory of "..path..":\n", n)
+  n = system.drawMenu(fl, "Directory of "..path..":\n", n)
   if n==#fl then 
     break
   elseif n==#fl-1 and not fs.isReadOnly(path) then
@@ -45,6 +46,7 @@ while true do
   else
     if fs.isDir(fs.combine(path,fl[n])) then
       path = fs.combine(path, fl[n])
+      n=1
     else 
       local act = system.drawMenu(set.proguf,fs.combine(path, fl[n]).."\n")
       if tArgs[1]=="-select" and act==1 then
