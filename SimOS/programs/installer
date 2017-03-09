@@ -42,7 +42,7 @@ if n==1 then
   if options[3] then
     shell.run("set shell.allow_startup true")
     local h = fs.open("/startup","a")
-    h.writeLine("\n--Start SimOS\nshell.run('"..idir.."/SimOS'")
+    h.writeLine("\n--Start SimOS\nshell.run('"..idir.."SimOS')")
     h.close()
   end
   local h = fs.open(system.dir.."/registry", "r")
@@ -59,7 +59,7 @@ if n==1 then
     if read("*")~=pass then
       print("Passwords do not match, try again.")
     else
-      reg.apass=pass
+      reg["apass"]=pass
       break
     end
   end
@@ -68,7 +68,7 @@ if n==1 then
   fs.delete(idir.."/programs/installer")
   fs.makeDir(idir.."/startup")
   h = fs.open(idir.."/registry", "w")
-  h.write(textutils.serialize(registry))
+  h.write(textutils.serialize(reg))
   h.close()
   print("The installation is complete.")
   if options[3] then
