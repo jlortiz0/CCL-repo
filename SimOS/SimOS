@@ -114,7 +114,7 @@ while true do
     table.insert(active, progs[i][1])
   end
   table.insert(active, "Exit")
-  n = system.drawMenu(active, "Welcome to SimOS\nIt is "..textutils.formatTime(os.time(), system.get("24hr")).." on day "..os.day()..".\n", n)
+  n = system.drawMenu(active, "Welcome to SimOS.\nIt is "..textutils.formatTime(os.time(), system.get("24hr")).." on day "..os.day()..".\n", n)
   if n == #active then
     n=system.drawMenu({"Cancel", "Exit to CraftOS", "Reboot", "Shutdown"}, "Shutdown Menu:\n")
     if n==4 then os.shutdown()
