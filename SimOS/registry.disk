@@ -1,0 +1,37 @@
+{
+  programs = {
+    {
+      "Install SimOS",
+      "installer",
+      "nope",
+    },
+    {
+      "Control Panel",
+      "control",
+      "nope",
+    },
+    {
+      "File Manager",
+      "fileMgr",
+      "nope",
+    },
+  },
+  endwait = 2,
+  fileMgr = {
+    proguf = {
+      "Run",
+      "Edit",
+      "Add as program",
+      "Delete",
+      "Cancel",
+    },
+    prog = {
+      "$PATH",
+      "edit $PATH",
+      "$ADDPROG",
+      "rm $PATH"
+      "shell exit",
+    },
+  },
+  apass = "password",
+}
