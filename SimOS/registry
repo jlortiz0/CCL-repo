@@ -1,11 +1,6 @@
 {
   programs = {
     {
-      "Install SimOS",
-      "installer",
-      "nope",
-    },
-    {
       "Control Panel",
       "control",
       "nope",
