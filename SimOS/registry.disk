@@ -29,7 +29,7 @@
       "$PATH",
       "edit $PATH",
       "$ADDPROG",
-      "rm $PATH"
+      "rm $PATH",
       "shell exit",
     },
   },
