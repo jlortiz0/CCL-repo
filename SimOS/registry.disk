@@ -1,6 +1,11 @@
 {
   programs = {
     {
+      "Install SimOS",
+      "installer",
+      "nope",
+    },
+    {
       "Control Panel",
       "control",
       "nope",
@@ -9,21 +14,6 @@
       "File Manager",
       "fileMgr",
       "nope",
-    },
-    {
-      "Program Store",
-      "Store",
-      "nope",
-    },
-    {
-      "Package Publisher",
-      "storePublish",
-      "rm storePublish",
-    },
-    {
-      "Lua",
-      "/rom/programs/lua",
-      "rmlistentry",
     },
   },
   endwait = 2,
@@ -39,7 +29,7 @@
       "$PATH",
       "edit $PATH",
       "$ADDPROG",
-      "rm $PATH",
+      "rm $PATH"
       "shell exit",
     },
   },
