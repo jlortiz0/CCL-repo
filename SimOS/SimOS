@@ -106,7 +106,7 @@ if fs.isDir(system.dir.."/startup") and not system.safemode then
   end
 end
 
-local n
+local n=1
 while true do
   local progs = system.get("programs")
   local active = {}
@@ -114,7 +114,7 @@ while true do
     table.insert(active, progs[i][1])
   end
   table.insert(active, "Exit")
-  n = system.drawMenu(active, "Welcome to SimOS\nIt is "..textutils.formatTime(os.time(), system.get("24hr")).." on day "..os.day()..".\n")
+  n = system.drawMenu(active, "Welcome to SimOS.\nIt is "..textutils.formatTime(os.time(), system.get("24hr")).." on day "..os.day()..".\n", n)
   if n == #active then
     n=system.drawMenu({"Cancel", "Exit to CraftOS", "Reboot", "Shutdown"}, "Shutdown Menu:\n")
     if n==4 then os.shutdown()
