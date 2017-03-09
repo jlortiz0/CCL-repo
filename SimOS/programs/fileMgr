@@ -1,6 +1,6 @@
 local tArgs = {...}
 if tArgs[2]=="-select" then
-  table.insert(tArgs, table.remove(tArgs), 1)
+  table.insert(tArgs, 1, table.remove(tArgs))
 end
 local ori = #system.get("programs")
 local path = (tArgs[2] or tArgs[1]) or ""
