@@ -18,7 +18,7 @@ while true do
   end
   if not fs.isReadOnly(path) then table.insert(fl, "New...") end
   table.insert(fl, "Exit")
-  local n = system.drawMenu(fl, "Directory of "..path..":\n")
+  local n = system.drawMenu(fl, "Directory of "..path..":\n", n)
   if n==#fl then 
     break
   elseif n==#fl-1 and not fs.isReadOnly(path) then
