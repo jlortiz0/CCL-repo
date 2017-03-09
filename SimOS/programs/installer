@@ -2,8 +2,12 @@ if not string.find(system.dir, "disk") then
   print("This program is for use on install disks only.")
   return
 end
-
-local n = system.drawMenu({"Install", "Don't"}, "This program will install SimOS on your computer.\nProceed?\n")
+local n
+if ...=="-yes" then
+  n=1
+else
+  n = system.drawMenu({"Install", "Don't"}, "This program will install SimOS on your computer.\nProceed?\n")
+end
 if n==1 then
   local idir
   while true do
