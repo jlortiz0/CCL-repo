@@ -1,14 +1,15 @@
-if string.find(system.dir, "disk") then --else
+if not string.find(system.dir, "disk") then
   print("This program is for use on install disks only.")
   return
 end
 
 local n = system.drawMenu({"Install", "Don't"}, "This program will install SimOS on your computer.\nProceed?\n")
 if n==1 then
+  local idir
   while true do
     print("Please type in the install dir:")
     write("/")
-    local idir = "/"..read().."/SimOS/"
+    idir = "/"..read().."/SimOS/"
     if system.drawMenu({"Yes", "No"}, "SimOS will be installed in "..idir..".\n")==1 then break end
   end
   local options = {{true, true, true, false}, {"Help files and other documentation", "Custom disk bootloader", "Run on computer start", "24 hour time"}}
@@ -41,16 +42,16 @@ if n==1 then
   if options[3] then
     shell.run("set shell.allow_startup true")
     local h = fs.open("/startup","a")
-    h.writeLine("\n--Start SimOS\nshell.run("..idir.."/SimOS)")
+    h.writeLine("\n--Start SimOS\nshell.run('"..idir.."/SimOS'")
     h.close()
   end
   local h = fs.open(system.dir.."/registry", "r")
   local reg = textutils.unserialize(h.readAll())
   h.close()
   if options[4] then
-    reg.24hr = true
+    reg["24hr"] = true
   end
-  table.remove(registry.programs, 1)
+  table.remove(reg.programs, 1)
   while true do
     print("You need to set an administrator password:")
     local pass = read("*")

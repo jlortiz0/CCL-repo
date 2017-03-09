@@ -1,6 +1,11 @@
 {
   programs = {
     {
+      "Install SimOS",
+      "installer",
+      "nope",
+    },
+    {
       "Control Panel",
       "control",
       "nope",
@@ -31,7 +36,7 @@
       "edit $PATH",
       "$ADDPROG",
       "rm $PATH",
-      "/path/ide",
+      "/path/ide $PATH",
       "shell exit",
     },
   },

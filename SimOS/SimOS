@@ -1,7 +1,7 @@
 term.clear()
 term.setCursorPos(1,1)
 system = {}
-system.mainFile = "/"..fs.find("*/SimOS/SimOS")[1]
+system.mainFile = "/"..fs.find("*SimOS/SimOS")[1]
 if ...=="-safe" then 
   system.safemode=true
   print("Safemode active.") 
