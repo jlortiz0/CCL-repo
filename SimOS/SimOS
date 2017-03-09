@@ -1,0 +1,131 @@
+term.clear()
+term.setCursorPos(1,1)
+system = {}
+system.mainFile = "/"..fs.find("*SimOS/SimOS")[1]
+if ...=="-safe" then 
+  system.safemode=true
+  print("Safemode active.") 
+end 
+system.dir = "/"..fs.combine(system.mainFile, "..")
+function system.drawMenu(menu, pt, n)
+  if not menu then return end
+  pt=pt or ""
+  n=n or 1
+  local len = #menu
+  while true do
+    term.clear()
+    term.setCursorPos(1,1)
+    local lines = print(pt)
+    for i=1,len do
+      if i==n then 
+        lines=lines+print("-> ["..menu[i].."]")
+      else 
+        lines=lines+print(menu[i])
+      end 
+      if lines>15 and i>=n then break end
+    end
+    print("Use arrow keys and enter to select")
+    local _,key = os.pullEvent("key")
+    if key == 200 and n>1 then n=n-1
+    elseif key == 208 and n<len then n=n+1
+    elseif key == 28 then return n end
+  end 
+end
+
+local function getKeyEvent(n)
+  if type(n) ~= "number" then return end
+  while true do
+    local _,key = os.pullEvent("key")
+    if key==n then return
+  end 
+end 
+end
+
+print("Press F8 or Fn+F8 to pause startup...")
+if parallel.waitForAny(function() getKeyEvent(66) end, function() sleep(2) end)==1 then
+  local n = system.drawMenu({"Continue boot","Start in safemode", "Boot from Disk", "Exit to CraftOS", "Shutdown"}, "Startup paused.\n")
+  if n==3 then
+    local disks = {"Don't boot from disk"}
+    local dp = {"shell exit"}
+    for _,v in pairs({peripheral.find("drive")}) do
+      if v.hasData() and fs.exists(v.getMountPath().."/startup") then
+        table.insert(dp, v.getMountPath().."/startup")
+        if v.getDiskLabel() then
+          table.insert(disks, v.getDiskLabel())
+        else
+          table.insert(disks, "Unlabeled disk with ID "..v.getDiskID())
+        end
+      end
+    end
+    n = system.drawMenu(disks, "Select a disk to boot from:\n")
+    shell.run(dp[n])
+    shell.run(system.mainFile)
+    return
+  elseif n==5 then os.shutdown()
+  else
+    if n == 1 then shell.run(system.mainFile) 
+    elseif n==2 then shell.run(system.mainFile, "-safe") end
+    return
+  end 
+end
+
+if not system.safemode then
+  if fs.exists(system.dir.."/registry.old") then
+      fs.delete(system.dir.."/registry.old")
+  end
+  fs.copy(system.dir.."/registry", system.dir.."/registry.old")
+end
+local h = fs.open(system.dir.."/registry", "r")
+local registry = textutils.unserialise(h.readAll())
+h.close()
+local pass = registry.apass
+function system.get(value)
+  return textutils.unserialize(textutils.serialize(registry[value]))
+end
+function system.set(value, new)
+  registry[value]=textutils.unserialize(textutils.serialize(new))
+end
+function system.saveSettings()
+  print("The program is trying to save changes to the registry.")
+  print("Please enter the password to authenticate this:")
+  if read("*")~=pass then
+    print("Cancelled.")
+    return
+  end
+  local h = fs.open(system.dir.."/registry", "w")
+  registry.apass=pass
+  h.write(textutils.serialise(registry))
+  h.close()
+  registry.apass=nil
+end
+
+if fs.isDir(system.dir.."/startup") and not system.safemode then
+  for _,v in pairs(fs.list(system.dir.."/startup/")) do
+    shell.run("/"..system.dir.."/startup/"..v)
+  end
+end
+
+local n
+while true do
+  local progs = system.get("programs")
+  local active = {}
+  for i=1,#progs do
+    table.insert(active, progs[i][1])
+  end
+  table.insert(active, "Exit")
+  n = system.drawMenu(active, "Welcome to SimOS\nIt is "..textutils.formatTime(os.time(), system.get("24hr")).." on day "..os.day()..".\n")
+  if n == #active then
+    n=system.drawMenu({"Cancel", "Exit to CraftOS", "Reboot", "Shutdown"}, "Shutdown Menu:\n")
+    if n==4 then os.shutdown()
+    elseif n==3 then os.reboot()
+    elseif n==2 then return end
+  else
+    term.clear()
+    term.setCursorPos(1,1)
+    local dir = shell.dir()
+    shell.setDir(system.dir.."/programs/")
+    shell.run(progs[n][2])
+    shell.setDir(dir)
+    sleep(system.get("endwait"))
+  end 
+end
