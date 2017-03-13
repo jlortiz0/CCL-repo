@@ -8,27 +8,39 @@ if ...=="-safe" then
   print("Safemode active.") 
 end 
 system.dir = "/"..fs.combine(system.mainFile, "..")
-function system.drawMenu(menu, pt, n)
-  if not menu then return end
+function system.drawMenu(m, pt, n)
+  if not m then return end
   pt=pt or ""
   n=n or 1
-  local len = #menu
+  local s,h = term.getSize()
+  h=h-5
+  if n<(h/2) then
+    s=1
+  elseif n>(#m-h+1) then
+    s=#m-h+1
+  else
+    s=n
+  end
   while true do
     term.clear()
     term.setCursorPos(1,1)
-    local lines = print(pt)
-    for i=1,len do
+    print(pt)
+    for i=s,s+h do
       if i==n then 
-        lines=lines+print("-> ["..menu[i].."]")
+        print("-> ["..m[i].."]")
       else 
-        lines=lines+print(menu[i])
+        print(m[i])
       end 
-      if lines>15 and i>=n then break end
+      if #m==i then break end
     end
     print("Use arrow keys and enter to select")
     local _,key = os.pullEvent("key")
-    if key == 200 and n>1 then n=n-1
-    elseif key == 208 and n<len then n=n+1
+    if key == 200 and n>1 then 
+      n=n-1
+      if n<s then s=s-1 end
+    elseif key == 208 and n<#m then 
+      n=n+1
+      if s<#m-h+1 and n>s+h then s=s+1 end
     elseif key == 28 then return n end
   end 
 end
@@ -130,3 +142,4 @@ while true do
     sleep(system.get("endwait"))
   end 
 end
+

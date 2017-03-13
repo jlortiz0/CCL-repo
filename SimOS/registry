@@ -11,8 +11,8 @@
       "nope",
     },
     {
-      "Lua",
-      "/rom/programs/lua",
+      "Help Widget",
+      "help",
       "rmlistentry",
     },
   },
