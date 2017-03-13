@@ -14,6 +14,15 @@ end
 local n = 1
 while true do
   local fl = fs.list(path)
+  local fc = 0
+  for i=1, #fl do
+    if fs.isDir(fs.combine(path, fl[i])) then
+      fc=fc+1
+      table.insert(fl, fc, table.remove(fl, i))
+      --I need to test if this is really needed, but I'll throw it in anyway
+      i=i-1
+    end
+  end
   if path ~= "" then 
     table.insert(fl, 1, "..") 
   end
