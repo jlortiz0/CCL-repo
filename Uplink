@@ -1,0 +1,49 @@
+local function menu(m, p, n)
+  n=n or 1
+  p=p or ""
+  local s,h = term.getSize()
+  h=h-5
+  while true do
+    if n<h/2 then
+      s=1
+    elseif n>#m-h+1 then
+      s=#m-h+1
+    else
+      s=n
+    end
+    term.clear()
+    term.setCursorPos(1,1)
+    print(p)
+    for i=s, s+h do
+      if i==n  then print("-> ["..m[i].."]")
+      else print(m[i]) end
+      if #m==i then break end
+    end
+    print("Use arrow keys and enter to select")
+    local _,key = os.pullEvent("key")
+    if key==200 then if n>1 then n=n-1 end
+    elseif key==208 then if n<#m then n=n+1 end
+    else return n, key end
+  end
+end
+
+local h,tSave = fs.open(".uplink", "r")
+if h then
+  tSave=textutils.unserialize(h.readAll())
+  h.close()
+else
+  tSave = {}
+  textutils.slowPrint("Connecting to UPLINK PUBLIC ACCESS SERVER...")
+  sleep(0.2)
+  write("localhost>")
+  textutils.slowPrint("connect 128.0.0.5")
+  sleep(0.2)
+  print("Awaiting connection acknowledgement from UPLINK...")
+  sleep(2.4)
+  term.clear()
+  term.setCursorPos(1,1)
+  print("UPLINK: About Us")
+  print("Welcome to the Uplink public access server.\nWe maintain the largest list of freelance agents in the world. We have operated with a perfect record of satisfied costumers and successful agents. We act as an anonymous job center fpr clients and agents alike. By providing agents with Gateway computers, we ensure digital security in the modern world.")
+  print("\nYou are here because you wish to join this company. Press enter to proceed.")
+  os.pullEvent("key")
+end
