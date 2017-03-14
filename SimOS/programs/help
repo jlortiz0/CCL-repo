@@ -1,42 +1,55 @@
+local function view(path)
+  local h = fs.open(path, "r")
+  local l, words, longest = h.readLine(), {"This shouldn't appear"}, 0
+  repeat
+    if longest<#l then longest=#l end 
+    table.insert(words, l)
+    l=h.readLine()
+  until l==nil
+  local starty, startx = 1,1
+  local w, h = term.getSize()
+  longest = longest-w+2
+  if #words<h then table.remove(words, 1) end
+  while true do
+    term.clear()
+    term.setCursorPos(1,1)
+    for i=starty, (starty+h) do
+      if i>#words then break end
+      print(string.sub(words[i], startx, (startx+w-1)))
+    end
+    print("Use arrow keys to move, ctrl to exit.")
+    local _, key = os.pullEvent("key")
+    if key==keys.down and starty<#words-h then
+      starty=starty+1
+    elseif key==keys.up and starty>1 then
+      starty=starty-1
+    elseif key==keys.left and startx>1 then
+      startx=startx-1
+    elseif key==keys.right and startx<longest then
+      startx=startx+1
+    elseif key==keys.leftCtrl or key==keys.rightCtrl then
+      break
+    end 
+  end
+end
+
 local n = 1
 while true do
   local topics = help.topics()
   table.insert(topics, "Exit")
-  n = system.drawMenu(topics, "Please select a help topic:\n", n)
-  if n==#topics then
-    return
-  elseif topics[n]~="index" then
-    local h = fs.open(help.lookup(topics[n]), "r")
-    local l, words, longest = h.readLine(), {"This shouldn't appear"}, 0
-    repeat
-      if longest<#l then longest=#l end 
-      table.insert(words, l)
-      l=h.readLine()
-    until l==nil
-    local starty, startx = 1,1
-    local w, h = term.getSize()
-    longest = longest-w+2
-    if #words<h then table.remove(words, 1) end
-    while true do
-      term.clear()
-      term.setCursorPos(1,1)
-      for i=starty, (starty+h) do
-        if i>#words then break end
-        print(string.sub(words[i], startx, (startx+w-1)))
-      end
-      print("Use arrow keys to move, ctrl to exit.")
-      local _, key = os.pullEvent("key")
-      if key==keys.down and starty<#words-h then
-        starty=starty+1
-      elseif key==keys.up and starty>1 then
-        starty=starty-1
-      elseif key==keys.left and startx>1 then
-        startx=startx-1
-      elseif key==keys.right and startx<longest then
-        startx=startx+1
-      elseif key==keys.leftCtrl or key==keys.rightCtrl then
-        break
-      end
+  table.insert(topics, 1, "Search...")
+  n=system.drawMenu(topics, "Please select a help topic:\n", n)
+  if n==#topics then return
+  elseif n==1 then
+    write("Search term:")
+    local search = read()
+    local r = help.completeTopic(search)
+    for i=1, #r do
+      r[i]=search..r[i]
     end
+    table.insert(r, "Go Back")
+    local n = system.drawMenu(r, "Searching for help topic "..search.."\n")
+    if n<#r and r[n]~="index" then view(help.lookup(r[n])) end
+  elseif topics[n]~="index" then view(help.lookup(topics[n]))
   end
 end
