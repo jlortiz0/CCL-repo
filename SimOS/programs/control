@@ -16,7 +16,7 @@ while true do
       if n==#active then 
         break
       else
-        shell.run("apt remove "..active[n])
+        shell.run("apt remove "..system.get("programs")[i][4])
       end 
     end
   elseif n==2 then
