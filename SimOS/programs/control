@@ -5,7 +5,6 @@ while true do
   if n==3 then break
   elseif n==1 then
     while true do
-      n=1
       local progs = system.get("programs")
       local active = {}
       for i=1,#progs do
@@ -16,7 +15,8 @@ while true do
       if n==#active then 
         break
       else
-        shell.run("apt remove "..system.get("programs")[i][4])
+        shell.run("apt remove "..system.get("programs")[n][4])
+        sleep(1)
       end 
     end
   elseif n==2 then
@@ -45,8 +45,8 @@ while true do
       else
         break
       end
-      n=1
     end
   end
+  n=1
 end
 system.saveSettings()
