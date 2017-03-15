@@ -16,19 +16,7 @@ while true do
       if n==#active then 
         break
       else
-        active = DM({"Remove", "Cancel"}, "Remove program "..progs[n][1].." ?\n")
-        if active==1 then
-          if progs[n][3] == "rmlistentry" then
-            table.remove(progs, n)
-          elseif progs[n][3] == "nope" then
-            print("Cannot remove this program.")
-            sleep(1)
-          else
-            shell.run(progs[n][3])
-            table.remove(progs, n)
-          end
-          system.set("programs", progs)
-        end 
+        shell.run("apt remove "..active[n])
       end 
     end
   elseif n==2 then
@@ -57,6 +45,7 @@ while true do
       else
         break
       end
+      n=1
     end
   end
 end

@@ -1,0 +1,39 @@
+local tArgs = {...}
+
+if tArgs[1]=="update" then
+elseif tArgs[1]=="upgrade" then
+elseif tArgs[1]=="install" then
+elseif tArgs[1]=="addrepo" then
+elseif tArgs[1]=="remove" and tArgs[2] then
+  local thingy = system.get("programs")
+  local i=0
+  repeat
+    i=i+1
+    if thingy[i][4] then break end
+  until i==#thingy
+  print(thingy[i][1].." will be removed. (y/n)")
+  local _,key = os.pullEvent("char")
+  if key~="y" then return end
+  if thingy[i][3]=="nope" then
+    print("APT cannot remove this package, check with your system administrator.")
+  else
+    if thingy[i][3]~="rmlistentry" then
+      shell.run(thingy[i][3])
+    end
+    table.remove(thingy, i)
+    system.set("programs", thingy)
+  end
+  print("Done.")
+elseif tArgs[1]=="rmrepo" then
+elseif tArgs[1]=="save" then system.saveSettings()
+else
+  print("apt update - Updates the list of programs.")
+  print("apt upgrade - Installs new versions of applications.")
+  print("apt addrepo <id> - Adds an apt repository to check for apps.")
+  print("apt install <package> - Installs the specified package.")
+  print("apt remove <package> - Removes an installed package.")
+  print("apt rmrepo <id> - Removes an apt repository.")
+  print("apt help - Take a guess.")
+  print("apt save - Saves any changes made to the system.")
+  print("This APT has cat powers.")
+end
