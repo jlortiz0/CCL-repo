@@ -38,5 +38,9 @@
       "shell exit",
     },
   },
+  apt = {
+  	repo = {},
+  	pkl = {},
+  }
   apass = "password",
 }
