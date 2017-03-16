@@ -1,25 +1,28 @@
 {
+  endwait = 2,
   programs = {
     {
       "Control Panel",
       "control",
       "nope",
       "sysCtrl",
+      1,
     },
     {
       "File Manager",
       "fileMgr",
       "nope",
       "sysFileMgr",
+      1,
     },
     {
       "Help Widget",
       "help",
       "rmlistentry",
       "sysHelpW",
+      1,
     },
   },
-  endwait = 2,
   fileMgr = {
     proguf = {
       "Run",
@@ -38,9 +41,9 @@
       "shell exit",
     },
   },
-  apt = {
-  	repo = {},
-  	pkl = {},
-  }
   apass = "password",
+  apt = {
+    repo = {},
+    pkl = {},
+  },
 }
