@@ -1,0 +1,19 @@
+--This is a really beta construct, don't question it.
+while true do
+  local id, msg = rednet.receive("SimOSAPT")
+  if msg=="update" then
+    local list = fs.list("/apt-share/")
+    for i=1, #list do
+      --Tell the user that all programs are version 1 until I make a program updater
+      list[i]={list[i], 1}
+    end
+    rednet.send(id, list, "SimOSAPT")
+  else
+    if fs.exists("/apt-share/"..msg) then
+      local h = fs.open("/apt-share/"..msg, "r")
+      rednet.send(id, textutils.unserialize(h.readAll()), "SimOSAPT")
+    else
+      rednet.send(id, "nope", "SimOSAPT")
+    end
+  end
+end
