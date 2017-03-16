@@ -1,0 +1,9 @@
+print("Use CTRL+T to exit")
+while true do
+    local _, key, held = os.pullEvent("key")
+    if keys.getName(key) then
+        print(key.." : "..keys.getName(key).." Held?:"..tostring(held))
+    else
+          print(key.." : unknown Held?:"..tostring(held))
+    end
+end
