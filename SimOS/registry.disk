@@ -4,21 +4,29 @@
       "Install SimOS",
       "installer",
       "nope",
+      "sysInstall",
+      math.huge,
     },
     {
       "Control Panel",
       "control",
       "nope",
+      "sysCtrl",
+      math.huge,
     },
     {
       "File Manager",
       "fileMgr",
       "nope",
+      "sysFileMgr",
+      math.huge,
     },
     {
       "Help Widget",
       "help",
       "rmlistentry",
+      "sysHelpW",
+      1,
     },
   },
   endwait = 2,
@@ -39,4 +47,8 @@
     },
   },
   apass = "password",
+  apt = {
+    repo = {},
+    pkl = {},
+  },
 }
