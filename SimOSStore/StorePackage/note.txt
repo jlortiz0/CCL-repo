@@ -1,4 +1,0 @@
-The version of JMail contained in this directory is OLD! 
-Specifically, it's from 2014. 
-It isn't compatible with newer versions, and it was deprecated for a reason. 
-Let it stay that way.
