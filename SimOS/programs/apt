@@ -7,15 +7,15 @@ if tArgs[1]=="update" then
     print("Trying "..repos[i])
     rednet.send(repos[i], "update", "SimOSAPT")
     local _, data = rednet.receive("SimOSAPT", 5)
-    if data then
+    if type(data)=="table" then
       for i=1, #data do
         info[data[i][1]]={table.unpack(data[i], 2)}
       end
     else
       print("Got no response.")
     end
-    print("Done.")
   end
+  print("Done.")
   system.set("apt", {["repo"]=repos, ["pkl"]=info})
 elseif tArgs[1]=="upgrade" then
 elseif tArgs[1]=="install" and tArgs[2] then
@@ -31,8 +31,7 @@ elseif tArgs[1]=="install" and tArgs[2] then
     print("Server did not reply.")
   elseif data=="nope" then
     print("Server could not find package, try running apt update.")
-  else
-    if type(data[6])=="string" then
+  elseif type(data[6])=="string" then
       local f = fs.open(system.dir.."/programs/"..tArgs[2], "w")
       f.write(data[6])
       f.close()
@@ -41,13 +40,17 @@ elseif tArgs[1]=="install" and tArgs[2] then
       table.remove(progs[#progs])
       system.set("programs", progs)
       print("Sucess.")
-    else
-      print("APT is out of date.")
-    end
+  else
+      print("Multifile support not implemented.")
   end
 elseif tArgs[1]=="addrepo" and tArgs[2] then
+  rednet.send(tonumber(tArgs[2]), "PING", "SimOSAPT")
+  local _, msg = rednet.receive("SimOSAPT", 5)
+  if msg~="PONG" then
+    print("Not a repo.")
+    return
+  end
   local repos = system.get("apt")
-  --One day I will check to make sure it is a repo...
   table.insert(repos.repo, tonumber(tArgs[2]))
   system.set("apt", repos)
 elseif tArgs[1]=="remove" and tArgs[2] then
@@ -56,7 +59,11 @@ elseif tArgs[1]=="remove" and tArgs[2] then
   repeat
     i=i+1
     if thingy[i][4]==tArgs[2] then break end
-  until i==#thingy
+    if i>#thingy then 
+      print("Package not installed.")
+      return 
+    end
+  until i==#thingy+5
   print(thingy[i][1].." will be removed. (y/n)")
   local _,key = os.pullEvent("char")
   if key~="y" then return end
@@ -77,6 +84,7 @@ elseif tArgs[1]=="rmrepo" and tArgs[2] then
   	if repos.repo[i]==tArgs[2] then
   	  table.remove(repos.repo, i)
   	  i=i-1
+     break
   	end
   end
   system.set("apt", repos)
