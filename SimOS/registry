@@ -6,14 +6,14 @@
       "control",
       "nope",
       "sysCtrl",
-      math.huge,
+      1,
     },
     {
       "File Manager",
       "fileMgr",
       "nope",
       "sysFileMgr",
-      math.huge,
+      1,
     },
     {
       "Help Widget",
