@@ -46,7 +46,7 @@ while true do
         break
       end
     end
+    system.saveSettings()
   end
   n=1
 end
-system.saveSettings()
