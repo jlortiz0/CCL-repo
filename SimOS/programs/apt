@@ -12,23 +12,46 @@ if tArgs[1]=="update" then
         info[data[i][1]]={table.unpack(data[i], 2)}
       end
     else
-      print("Got no response.")
+      print("Got no response, try again later or ask the admin.")
     end
   end
   print("Done.")
   system.set("apt", {["repo"]=repos, ["pkl"]=info})
 elseif tArgs[1]=="upgrade" then
+  local progs = system.get("programs")
+  local pkl = system.get("apt").pkl
+  for i=1, #progs do
+    if pkl[progs[i][4]] and pkl[progs[i][4]][2]>progs[i][5] then
+      if tArgs[2] and progs[i][4]==tArgs[2] then
+        shell.run("/"..system.dir.."/programs/apt install "..progs[i][4].." -upgrade")
+        print("Upgraded "..progs[i][1])
+      end
+    end
+  end
 elseif tArgs[1]=="install" and tArgs[2] then
   local pkls = system.get("apt").pkl
   if not pkls[tArgs[2]] then
-    print("Could not find package.")
+    print("Could not find package, try apt update.")
     return
+  elseif (not tArgs[3]) or tArgs[3]~="-update" then
+    local progs = system.get("programs")
+    for i=1, #progs do
+      if progs[i][4]==tArgs[2] then
+        print("Package already installed, did you mean apt upgrade "..tArgs[2].."?")
+        return
+      end
+    end
+    print(tArgs[2].." will be installed.(y/n)")
+    local _, key = os.pullEvent("key")
+    if key~=keys.y then return end
+  else
+    tArgs[5]="Donut Save"
   end
   pack = pkls[tArgs[2]]
   rednet.send(pack[1], tArgs[2], "SimOSAPT")
   local _, data = rednet.receive("SimOSAPT", 5)
   if not data then
-    print("Server did not reply.")
+    print("Server did not reply, try again or ask an admin.")
   elseif data=="nope" then
     print("Server could not find package, try running apt update.")
   elseif type(data[6])=="string" then
@@ -60,7 +83,7 @@ elseif tArgs[1]=="remove" and tArgs[2] then
     i=i+1
     if thingy[i][4]==tArgs[2] then break end
     if i>#thingy then 
-      print("Package not installed.")
+      print("Package not installed, did you mean apt install "..tArgs[2].."?")
       return 
     end
   until i==#thingy+5
@@ -68,7 +91,7 @@ elseif tArgs[1]=="remove" and tArgs[2] then
   local _,key = os.pullEvent("char")
   if key~="y" then return end
   if thingy[i][3]=="nope" then
-    print("APT cannot remove this package, check with your system administrator.")
+    print("APT cannot remove this package, check with your sysadmin.")
   else
     if thingy[i][3]~="rmlistentry" then
       shell.run(thingy[i][3])
@@ -89,6 +112,7 @@ elseif tArgs[1]=="rmrepo" and tArgs[2] then
   end
   system.set("apt", repos)
 else
+  tArgs[5]="Donut Save"
   print("apt update - Updates the list of programs.")
   print("apt upgrade - Installs new versions of applications.")
   print("apt addrepo <id> - Adds an apt repository to check for apps.")
@@ -97,4 +121,8 @@ else
   print("apt rmrepo <id> - Removes an apt repository.")
   print("apt help - Take a guess.")
   print("This APT has cat powers.")
+end
+
+if tArgs[5]~="Donut Save" then
+  system.saveSettings()
 end
