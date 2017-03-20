@@ -57,8 +57,12 @@ end
 end
 
 if ...~="-api" then
+  paintutils.drawImage(paintutils.loadImage(system.dir.."/logo"), 3, 2)
+  term.setBackgroundColor(colors.black)
+  term.setTextColor(colors.white)
+  print("\n                   by jlortiz\n")
   print("Press F8 or Fn+F8 to pause startup...")
-  if parallel.waitForAny(function() getKeyEvent(66) end, function() sleep(2) end)==1 then
+  if parallel.waitForAny(function() getKeyEvent(66) end, function() sleep(3) end)==1 then
     local n = system.drawMenu({"Continue boot","Start in safemode", "Boot from Disk", "Exit to CraftOS", "Shutdown"}, "Startup paused.\n")
     if n==3 then
       local disks = {"Don't boot from disk"}
@@ -148,4 +152,3 @@ while true do
     sleep(system.get("endwait"))
   end 
 end
-
