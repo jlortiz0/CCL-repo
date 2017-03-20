@@ -3,29 +3,8 @@
   "JMail",
   "rm JMail",
   "JMail",
-  2,
-  "local function menu(m, p, n)\
-  n=n or 1\
-  p=p or \"\"\
-  while true do\
-    term.clear()\
-    term.setCursorPos(1,1)\
-    local lines=write(p)\
-    for k=1, #m do\
-      if k==n then\
-        lines=lines+print(\"-> [\"..m[k]..\"]\")\
-      else\
-        lines=lines+print(m[k])\
-      end\
-      if lines>15 and k>=n then break end\
-    end\
-    local _, key = os.pullEvent(\"key\")\
-    if key==200 and n>1 then n=n-1\
-    elseif key==208 and n<#m then n=n+1\
-    elseif key==28 then return n end\
-  end\
-end\
-\
+  2.1,
+  "local menu = system.drawMenu\
 print(\"JMail client\")\
 print(\"Type ID of mail server:\")\
 local sid = tonumber(read())\
