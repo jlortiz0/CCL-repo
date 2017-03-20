@@ -1,7 +1,0 @@
-if not string.find(system.dir, "disk") then
-	return
-end
-
-if system.drawMenu({"Try a demo", "Install SimOS"}, "Welcome to the SimOS demo disk!\n")==2 then
-	shell.run(system.dir.."/programs/installer -yes")
-end
