@@ -15,13 +15,6 @@
       "sysFileMgr",
       1,
     },
-    {
-      "Help Widget",
-      "help",
-      "rmlistentry",
-      "sysHelpW",
-      1,
-    },
   },
   fileMgr = {
     proguf = {
@@ -43,7 +36,14 @@
   },
   apass = "password",
   apt = {
-    repo = {},
-    pkl = {},
+    repo = {
+      1,
+    },
+    pkl = {
+      JMail = {
+        1,
+        2.1,
+      },
+    },
   },
 }

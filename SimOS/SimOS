@@ -1,5 +1,7 @@
-term.clear()
-term.setCursorPos(1,1)
+if ...~="-api" then
+  term.clear()
+  term.setCursorPos(1,1)
+end
 system = {}
 --Sometimes one returns nil, sometimes the other does. Not sure why. Anyway, check both.
 system.mainFile = "/"..(fs.find("*SimOS/SimOS")[1] or fs.find("*/SimOS/SimOS")[1])
@@ -54,32 +56,35 @@ local function getKeyEvent(n)
 end 
 end
 
-print("Press F8 or Fn+F8 to pause startup...")
-if parallel.waitForAny(function() getKeyEvent(66) end, function() sleep(2) end)==1 then
-  local n = system.drawMenu({"Continue boot","Start in safemode", "Boot from Disk", "Exit to CraftOS", "Shutdown"}, "Startup paused.\n")
-  if n==3 then
-    local disks = {"Don't boot from disk"}
-    local dp = {"shell exit"}
-    for _,v in pairs({peripheral.find("drive")}) do
-      if v.hasData() and fs.exists(v.getMountPath().."/startup") then
-        table.insert(dp, v.getMountPath().."/startup")
-        if v.getDiskLabel() then
-          table.insert(disks, v.getDiskLabel())
-        else
-          table.insert(disks, "Unlabeled disk with ID "..v.getDiskID())
+if ...~="-api" then
+  print("Press F8 or Fn+F8 to pause startup...")
+  if parallel.waitForAny(function() getKeyEvent(66) end, function() sleep(2) end)==1 then
+    local n = system.drawMenu({"Continue boot","Start in safemode", "Boot from Disk", "Exit to CraftOS", "Shutdown"}, "Startup paused.\n")
+    if n==3 then
+      local disks = {"Don't boot from disk"}
+      local dp = {"shell exit"}
+      for _,v in pairs({peripheral.find("drive")}) do
+        if v.hasData() and fs.exists(v.getMountPath().."/startup") then
+          table.insert(dp, v.getMountPath().."/startup")
+          if v.getDiskLabel() then
+            table.insert(disks, v.getDiskLabel())
+          else
+            table.insert(disks, "Unlabeled disk with ID "..v.getDiskID())
+          end
         end
       end
-    end
-    n = system.drawMenu(disks, "Select a disk to boot from:\n")
-    shell.run(dp[n])
-    shell.run(system.mainFile)
-    return
-  elseif n==5 then os.shutdown()
-  else
-    if n == 1 then shell.run(system.mainFile) 
-    elseif n==2 then shell.run(system.mainFile, "-safe") end
-    return
-  end 
+      n = system.drawMenu(disks, "Select a disk to boot from:\n")
+      shell.run(dp[n])
+      shell.run(system.mainFile)
+      return
+    elseif n==5 then os.shutdown()
+    else
+      if n == 1 then shell.run(system.mainFile) 
+      elseif n==2 then shell.run(system.mainFile, "-safe") end
+      return
+    end 
+  end
+else system.safemode = true
 end
 
 if not system.safemode then
@@ -117,6 +122,7 @@ if fs.isDir(system.dir.."/startup") and not system.safemode then
     shell.run("/"..system.dir.."/startup/"..v)
   end
 end
+if ...=="-api" then return end
 
 local n=1
 while true do
