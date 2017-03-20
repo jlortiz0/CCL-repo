@@ -57,23 +57,35 @@ end
 end
 
 if ...~="-api" then
-  for i=1, 3 do
-  	sleep(0.1)
-  	term.clear()
-    local h = paintutils.loadImage(system.dir.."/logo")
-    if i<=2 then
-      for _, v in pairs(h) do
-      	for k=i, #v do
-      	  if v[k]==1 then
-      	  	v[k]=colors.gray+((i-1)*128)
+  if term.isColor() and not ... then
+    for i=1, 3 do
+  	  sleep(0.15)
+  	  term.clear()
+      local h = paintutils.loadImage(system.dir.."/logo")
+      if i<=2 then
+        for _, v in pairs(h) do
+      	  for k=1, #v do
+      	    if v[k]==1 then
+      	  	  v[k]=colors.gray+((i-1)*128)
+      	    end
       	  end
-      	end
+        end
       end
+      paintutils.drawImage(h, 2, 2)
+      term.setBackgroundColor(0x8000)
+      term.setTextColor(1)
+      print("\n                  by jlortiz\n")
     end
-    paintutils.drawImage(h, 2, 2)
-    term.setBackgroundColor(0x8000)
-    term.setTextColor(1)
-    print("\n                   by jlortiz\n")
+  elseif not ... then
+  	local h = paintutils.loadImage(system.dir.."/logo")
+  	for i=-9, 2 do
+  	  sleep(0.1)
+  	  term.clear()
+  	  paintutils.drawImage(h, 2, i)
+  	  term.setBackgroundColor(0x8000)
+      term.setTextColor(1)
+      print("\n                  by jlortiz\n")
+  	end
   end
   print("Press F8 or Fn+F8 to pause startup...")
   if parallel.waitForAny(function() getKeyEvent(66) end, function() sleep(3) end)==1 then
