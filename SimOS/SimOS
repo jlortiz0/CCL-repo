@@ -57,10 +57,24 @@ end
 end
 
 if ...~="-api" then
-  paintutils.drawImage(paintutils.loadImage(system.dir.."/logo"), 3, 2)
-  term.setBackgroundColor(colors.black)
-  term.setTextColor(colors.white)
-  print("\n                   by jlortiz\n")
+  for i=1, 3 do
+  	sleep(0.1)
+  	term.clear()
+    local h = paintutils.loadImage(system.dir.."/logo")
+    if i<=2 then
+      for _, v in pairs(h) do
+      	for k=i, #v do
+      	  if v[k]==1 then
+      	  	v[k]=colors.gray+((i-1)*128)
+      	  end
+      	end
+      end
+    end
+    paintutils.drawImage(h, 2, 2)
+    term.setBackgroundColor(0x8000)
+    term.setTextColor(1)
+    print("\n                   by jlortiz\n")
+  end
   print("Press F8 or Fn+F8 to pause startup...")
   if parallel.waitForAny(function() getKeyEvent(66) end, function() sleep(3) end)==1 then
     local n = system.drawMenu({"Continue boot","Start in safemode", "Boot from Disk", "Exit to CraftOS", "Shutdown"}, "Startup paused.\n")
