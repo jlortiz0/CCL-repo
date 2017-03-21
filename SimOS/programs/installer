@@ -1,87 +1,30 @@
-if not string.find(system.dir, "disk") then
-  print("This program is for use on install disks only.")
+if not http then
+  print("HTTP not availible! Please enable it in ComputerCraft.cfg or use an alternate install method.")
   return
 end
-local n
-if ...=="-yes" then
-  n=1
-else
-  n = system.drawMenu({"Install", "Don't"}, "This program will install SimOS on your computer.\nProceed?\n")
+
+local function getObject(file)
+  write("Getting SimOS/"..file.."...")
+  local page = http.get("https://raw.github.com/jlortiz0/CCL-repo/master/SimOS/"..file)
+  local fi = fs.open("/SimOS/"..file, "a")
+  fi.write(page.readAll())
+  fi.close()
+  page.close()
+  print("Done!")
 end
-if n==1 then
-  local idir
-  while true do
-    print("Please type in the install dir:")
-    write("/")
-    idir = "/"..read().."/SimOS/"
-    if system.drawMenu({"Yes", "No"}, "SimOS will be installed in "..idir..".\n")==1 then break end
-  end
-  local options = {{true, true, true, false}, {"Help files and other documentation", "Custom disk bootloader", "Run on computer start", "24 hour time"}}
-  local n=1
-  while true do
-    local opt = {}
-    for i=1, #options[1] do
-      if options[1][i] then
-        table.insert(opt, "[*]"..options[2][i])
-      else
-        table.insert(opt, options[2][i])
-      end
-    end
-    table.insert(opt, "Done")
-    n=system.drawMenu(opt, "Select additional items to install:\n", n)
-    if n==#opt then break end
-    if options[1][n] then
-      options[1][n]=false
-    else
-      options[1][n]=true
-    end
-  end
-  options = options[1]
-  if options[1] then
-    shell.run("copy "..system.dir.."/help /"..idir.."/help")
-  end
-  if options[2] then
-    shell.run("set shell.allow_disk_startup false")
-  end
-  if options[3] then
-    shell.run("set shell.allow_startup true")
-    local h = fs.open("/startup","a")
-    h.writeLine("\n--Start SimOS\nshell.run('"..idir.."SimOS')")
-    h.close()
-  end
-  local h = fs.open(system.dir.."/registry", "r")
-  local reg = textutils.unserialize(h.readAll())
-  h.close()
-  if options[4] then
-    reg["24hr"] = true
-  end
-  table.remove(reg.programs, 1)
-  while true do
-    print("You need to set an administrator password:")
-    local pass = read("*")
-    write("Confirm password:")
-    if read("*")~=pass then
-      print("Passwords do not match, try again.")
-    else
-      reg["apass"]=pass
-      break
-    end
-  end
-  fs.copy(system.dir.."/SimOS", idir.."/SimOS")
-  shell.run("copy "..system.dir.."/programs /"..idir.."/programs")
-  fs.delete(idir.."/programs/installer")
-  fs.makeDir(idir.."/startup")
-  h = fs.open(idir.."/registry", "w")
-  h.write(textutils.serialize(reg))
-  h.close()
-  print("The installation is complete.")
-  if options[3] then
-    print("Please remove the disk and press any key to continue...")
-    os.pullEvent("key")
-    os.reboot()
-  else
-    print("Now returning to the SimOS demo disk...")
-    sleep(1)
-    return
-  end
-end
+--Add something for detecting existing installs
+print("Install SimOS on this computer? (y/n)")
+local _, key = os.pullEvent("key")
+if key~=keys.y then return end
+
+getObject("SimOS")
+getObject("logo")
+getObject("registry")
+getObject("programs/apt")
+getObject("programs/fileMgr")
+getObject("programs/control")
+getObject("programs/view")
+print("Run SimOS now?")
+_, key = os.pullEvent("key")
+if key~=keys.y then return end
+shell.run("/SimOS/SimOS")
