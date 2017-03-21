@@ -2,6 +2,10 @@ if not http then
   print("HTTP not availible! Please enable it in ComputerCraft.cfg or use an alternate install method.")
   return
 end
+if parallel.waitForAny(function() http.get("https://raw.githubusercontent.com/jlortiz0/CCL-repo/master/README.md") end, function() sleep(2) end)==2 then
+  print("Looks like GitHub is down, try again later or use an alternate install method.")
+  return
+end
 
 local function getObject(file)
   write("Getting SimOS/"..file.."...")
