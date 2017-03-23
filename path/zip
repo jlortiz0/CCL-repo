@@ -3,12 +3,14 @@ print("JZip by jlortiz")
 local tArgs = { ... }
 if not tArgs[1] then
   printError("Usage: JZip <directory>")
-return end
+  return 
+end
 tArgs[2] = fs.getName(tArgs[1]) or tArgs[1]
 tArgs[1] = shell.resolve(tArgs[1])
 if not fs.exists(tArgs[1]) or not fs.isDir(tArgs[1]) then
   printError("No such directory")
-return end
+  return 
+end
 
 local function zip(dir)
   local fat = {}
@@ -27,6 +29,7 @@ local function zip(dir)
 end
 
 local tab = zip(tArgs[1])
+table.insert(tab, 1, "JZip")
 local fin = fs.open(shell.resolve(tArgs[2]..".jzip"), "w")
 fin.writeLine("print(\"Use JUnzip to unzip this file\")")
 fin.writeLine("return")
