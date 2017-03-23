@@ -134,17 +134,9 @@ function system.set(value, new)
   registry[value]=textutils.unserialize(textutils.serialize(new))
 end
 function system.saveSettings()
-  print("The program is trying to save changes to the registry.")
-  print("Please enter the password to authenticate this:")
-  if read("*")~=pass then
-    print("Cancelled.")
-    return
-  end
   local h = fs.open(system.dir.."/registry", "w")
-  registry.apass=pass
   h.write(textutils.serialise(registry))
   h.close()
-  registry.apass=nil
 end
 
 if fs.isDir(system.dir.."/startup") and not system.safemode then
