@@ -1,31 +1,18 @@
-local tArgs = {...}
+ocal tArgs = {...}
 
 if tArgs[1]=="update" then
   local repos = system.get("apt").repo
   local info = {}
   for i=1, #repos do
     print("Trying "..repos[i])
-    if type(repos[i])=="number" then
-      rednet.send(repos[i], "update", "SimOSAPT")
-      local _, data = rednet.receive("SimOSAPT", 5)
-      if type(data)=="table" then
-        for i=1, #data do
-          info[data[i][1]]={table.unpack(data[i], 2)}
-        end
-      else
-        print("Got no response, try again later or ask the admin.")
+    rednet.send(repos[i], "update", "SimOSAPT")
+    local _, data = rednet.receive("SimOSAPT", 5)
+    if type(data)=="table" then
+      for i=1, #data do
+        info[data[i][1]]={table.unpack(data[i], 2)}
       end
     else
-      local wp = http.get(repos[i].."/update")
-      if wp then
-        local h = textutils.unserialize(wp.readAll())
-        wp.close()
-        for i=1, #h do
-          info[h[i][1]]={table.unpack(data[i], 2)}
-        end
-      else
-        print("Got no response, try again later?")
-      end
+      print("Got no response, try again later or ask the admin.")
     end
   end
   print("Done.")
@@ -88,20 +75,15 @@ elseif tArgs[1]=="install" and tArgs[2] then
     print("Sucess.")
   end
 elseif tArgs[1]=="addrepo" and tArgs[2] then
-  if tonumber(tArgs[2]) then
-    rednet.send(tonumber(tArgs[2]), "PING", "SimOSAPT")
-    local _, msg = rednet.receive("SimOSAPT", 5)
-    if msg~="PONG" then
-      print("Not a repo.")
-      return
-    end
-    local repos = system.get("apt")
-    table.insert(repos.repo, tonumber(tArgs[2]))
-    system.set("apt", repos)
-  elseif string.sub(tArgs[2], 1, 4)=="http" then
-    local test = http.get(tArgs[2].."SimOSAPT")
-    if not test then print("Not a repo.") return end
-  else print("Not a repo.") return end
+  rednet.send(tonumber(tArgs[2]), "PING", "SimOSAPT")
+  local _, msg = rednet.receive("SimOSAPT", 5)
+  if msg~="PONG" then
+    print("Not a repo.")
+    return
+  end
+  local repos = system.get("apt")
+  table.insert(repos.repo, tonumber(tArgs[2]))
+  system.set("apt", repos)
 elseif tArgs[1]=="remove" and tArgs[2] then
   local thingy = system.get("programs")
   local i=0
