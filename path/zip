@@ -15,17 +15,16 @@ local fat = {}
 for _,file in pairs(fs.list(dir)) do
 if fs.isDir(fs.combine(dir, file)) then
 print("Zipping directory "..file)
-table.insert(fat, {file, zip(fs.combine(dir, file))})
+fat[file]=zip(dir.."/"..file)
 else
 local fi = fs.open(fs.combine(dir,file), "r")
 print("Zipping file "..file)
-table.insert(fat, {file, fi.readAll()})
+fat[file]=fi.readAll()
 fi.close()
 end end 
 return fat end
 
 local tab = zip(tArgs[1])
-table.insert(tab, 1, "JZip")
 local fin = fs.open(shell.resolve(tArgs[2]..".jzip"), "w")
 fin.writeLine("print(\"Use JUnzip to unzip this file\")")
 fin.writeLine("return")

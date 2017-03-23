@@ -13,23 +13,20 @@ f.readLine()
 f.readLine()
 local fat = textutils.unserialise(f.readAll())
 f.close()
-if type(fat) ~= "table" or fat[1]~="JZip" then
-printError("Not a JZip file.")
-return end
 
 print("Please enter directory to unzip to:")
 write(shell.dir().."/")
 local path = shell.resolve(read().."/")
 
 local function unzip(dir, tab)
-for i=1, #tab do
-print("Unzipping "..tab[i][1])
-if type(tab[i][2]) == "table" then
-fs.makeDir(fs.combine(dir, tab[i][1]))
-unzip(fs.combine(dir, tab[i][1]), tab[i][2])
+for k,v in ipairs(tab) do
+print("Unzipping "..k)
+if type(v)=="table" then
+fs.makeDir(fs.combine(dir, k))
+unzip(fs.combine(dir, k), v)
 else
-local fi = fs.open(fs.combine(dir, tab[i][1]), "w")
-fi.writeLine(tab[i][2])
+local fi = fs.open(fs.combine(dir, k), "w")
+fi.write(v)
 fi.close()
 end end end
 table.remove(fat,1)
