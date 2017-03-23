@@ -16,11 +16,11 @@ local function zip(dir)
   local fat = {}
   for _,file in pairs(fs.list(dir)) do
     if fs.isDir(fs.combine(dir, file)) then
-      print("Zipping directory "..file)
+      --print("Zipping directory "..file)
       fat[file]=zip(dir.."/"..file)
     else
       local fi = fs.open(fs.combine(dir,file), "r")
-      print("Zipping file "..file)
+      --print("Zipping file "..file)
       fat[file]=fi.readAll()
       fi.close()
     end
