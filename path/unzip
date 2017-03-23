@@ -2,10 +2,12 @@ print("JZip Unzipping tool")
 local tArgs = {...}
 if not tArgs[1] then
   printError("Usage: JUnzip <.zip file>")
-return end
+  return 
+end
 tArgs[1] = shell.resolve(tArgs[1])
 if not fs.exists(tArgs[1]) or fs.isDir(tArgs[1]) then
   printError("No such file")
+  return
 end
 
 local f = fs.open(tArgs[1], "r")
@@ -14,13 +16,18 @@ f.readLine()
 local fat = textutils.unserialise(f.readAll())
 f.close()
 
+if type(fat)~="table" or table.remove(fat, 1)~="JZip" then
+  printError("Not a JZip file.")
+  return
+end
+
 print("Please enter directory to unzip to:")
 write(shell.dir().."/")
 local path = shell.resolve(read().."/")
 
 local function unzip(dir, tab)
   for k,v in pairs(tab) do
-    print("Unzipping "..k)
+    --print("Unzipping "..k)
     if type(v)=="table" then
       fs.makeDir(fs.combine(dir, k))
       unzip(fs.combine(dir, k), v)
