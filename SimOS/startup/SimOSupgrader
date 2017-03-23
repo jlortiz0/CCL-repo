@@ -1,5 +1,9 @@
-if not http then return end
-if parallel.waitForAny(function() sleep(2) end, function() if not http.get("https://raw.githubusercontent.com/jlortiz0/CCL-repo/master/SimOS/logo") then sleep(4) end end)==1 then return end
+if not http then 
+if ... then print("Couldn't find HTTP API!")
+return end
+if parallel.waitForAny(function() sleep(4) end, function() if not http.get("https://raw.githubusercontent.com/jlortiz0/CCL-repo/master/SimOS/logo") then sleep(5) end end)==1 then
+if ... then print("GitHub isn't responding, are you connected to the internet?")
+return end
 
 local h = http.get("https://raw.githubusercontent.com/jlortiz0/CCL-repo/master/SimOS/registry")
 if not h then return end
@@ -51,4 +55,6 @@ if t.version > system.get("version") then
   sleep(2)
   shell.run(system.mainFile)
   error("Ignore this.", 0)
+elseif ... then
+print("No update found...")
 end
