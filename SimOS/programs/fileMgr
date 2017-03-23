@@ -66,7 +66,7 @@ while true do
         table.insert(progs, {read(), "/"..fs.combine(path,fl[n]), "rmlistentry"})
         system.set("programs", progs)
       else
-        shell.run(string.gsub(set.prog[act], "$PATH", "/"..fs.combine(path, fl[n])))
+        shell.run(string.gsub(set.prog[act], "$PATH", "\\"..fs.combine(path, fl[n])))
       end 
     end 
   end 
