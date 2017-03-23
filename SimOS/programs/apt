@@ -1,4 +1,4 @@
-ocal tArgs = {...}
+local tArgs = {...}
 
 if tArgs[1]=="update" then
   local repos = system.get("apt").repo
