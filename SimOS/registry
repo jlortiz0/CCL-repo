@@ -35,6 +35,7 @@
     },
   },
   apass = "password",
+  version = 0.7,
   apt = {
     repo = {
       1,
