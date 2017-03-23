@@ -2,15 +2,11 @@ if not http then
   print("HTTP not availible! Please enable it in ComputerCraft.cfg or use an alternate install method.")
   return
 end
-if parallel.waitForAny(function() http.get("https://raw.githubusercontent.com/jlortiz0/CCL-repo/master/README.md") end, function() sleep(2) end)==2 then
-  print("Looks like GitHub is down, try again later or use an alternate install method.")
-  return
-end
 
 local function getObject(file)
   write("Getting SimOS/"..file.."...")
   local page = http.get("https://raw.github.com/jlortiz0/CCL-repo/master/SimOS/"..file)
-  local fi = fs.open("/SimOS/"..file, "a")
+  local fi = fs.open("/SimOS/"..file, "w")
   fi.write(page.readAll())
   fi.close()
   page.close()
@@ -28,7 +24,7 @@ getObject("programs/apt")
 getObject("programs/fileMgr")
 getObject("programs/control")
 getObject("programs/view")
-print("Run SimOS now?")
+print("Run SimOS now? (y/n)")
 _, key = os.pullEvent("key")
 if key~=keys.y then return end
 shell.run("/SimOS/SimOS")
