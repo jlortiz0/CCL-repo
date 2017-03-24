@@ -144,7 +144,7 @@ if fs.isDir(system.dir.."/startup") and not system.safemode then
     shell.run("/"..system.dir.."/startup/"..v)
   end
 end
-if ...=="-api" then return end
+if ...=="-api" or system.safemode=="exit" then return end
 
 local n=1
 while true do
