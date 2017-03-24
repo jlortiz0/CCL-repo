@@ -1,0 +1,60 @@
+if not http then 
+if ... then print("Couldn't find HTTP API!") end
+return end
+if parallel.waitForAny(function() sleep(4) end, function() if not http.get("https://raw.githubusercontent.com/jlortiz0/CCL-repo/master/SimOS/logo") then sleep(5) end end)==1 then
+if ... then print("GitHub isn't responding, are you connected to the internet?") end
+return end
+
+local h = http.get("https://raw.githubusercontent.com/jlortiz0/CCL-repo/master/SimOS/registry")
+if not h then return end
+t = textutils.unserlialize(h.readAll())
+h.close()
+if t.version > system.get("version") then
+  print("A new version of SimOS is availible. Update now?(y/n)")
+  local _, key = os.pullEvent("key")
+  if key~=keys.y then return end
+  local function getObject(file)
+    write("Getting SimOS/"..file.."...")
+    local page = http.get("https://raw.github.com/jlortiz0/CCL-repo/master/SimOS/"..file)
+    local fi = fs.open(system.dir.."/"..file, "w")
+    fi.write(page.readAll())
+    fi.close()
+    page.close()
+    print("Done!")
+  end
+  getObject("SimOS")
+  getObject("logo")
+  getObject("programs/apt")
+  getObject("programs/fileMgr")
+  getObject("programs/control")
+  write("Updating SimOS/registry...")
+  local page = http.get("https://raw.github.com/jlortiz0/CCL-repo/master/SimOS/registry")
+  local function indexOf(table, value)
+    for k, v in ipairs(table) do
+      if v==value then return k end
+    end
+  end
+  local tab = textutils.unserialize(h.readAll())
+  if not tab then
+    printError("Couldn't update the registry.")
+    return
+  end
+  for ok, ov in ipairs(tab) do
+    if type(ov)=="table" then
+      for k, v in pairs(ov) do
+        if not table.contains(system.get(ok), v) then
+          local huh = system.get(ok)
+          table.insert(huh, k, v)
+          system.set(ok, huh)
+        end
+      end
+    end
+  end
+  system.saveSettings()
+  print("Restarting SimOS...")
+  sleep(2)
+  shell.run(system.mainFile)
+  error("Ignore this.", 0)
+elseif ... then
+print("No update found...")
+end
