@@ -1,4 +1,4 @@
-if system and fs.exists(system.dir.."/startup/sysUpgrader") then
+if fs.exists("SimOS/startup/sysUpgrader") then
   print("SimOS already installed, do you want to try to upgrade it?(y/n)")
   local _, key = os.pullEvent("key")
   if key~=keys.y then return end
