@@ -1,3 +1,4 @@
+if not system then shell.run("/SimOS/SimOS -api") end
 if not http then 
 if ... then print("Couldn't find HTTP API!") end
 return end
@@ -7,7 +8,7 @@ return end
 
 local h = http.get("https://raw.githubusercontent.com/jlortiz0/CCL-repo/master/SimOS/registry")
 if not h then return end
-t = textutils.unserlialize(h.readAll())
+t = textutils.unserialize(h.readAll())
 h.close()
 if t.version > system.get("version") then
   print("A new version of SimOS is availible. Update now?(y/n)")
@@ -34,7 +35,8 @@ if t.version > system.get("version") then
       if v==value then return k end
     end
   end
-  local tab = textutils.unserialize(h.readAll())
+  local tab = textutils.unserialize(page.readAll())
+  page.close()
   if not tab then
     printError("Couldn't update the registry.")
     return
