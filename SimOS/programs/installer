@@ -1,8 +1,8 @@
-if fs.exists("SimOS/startup/sysUpgrader") then
+if fs.exists("/SimOS/startup/sysUpgrade") then
   print("SimOS already installed, do you want to try to upgrade it?(y/n)")
   local _, key = os.pullEvent("key")
   if key~=keys.y then return end
-  shell.run("/"..system.dir.."/startup/sysUpgrader -verbose")
+  shell.run("/"..system.dir.."/startup/sysUpgrade -verbose")
   return
 end
 
@@ -28,11 +28,12 @@ if key~=keys.y then return end
 getObject("SimOS")
 getObject("logo")
 getObject("registry")
-getObject("startup/sysUpgrader")
+getObject("startup/sysUpgrade")
 getObject("programs/apt")
 getObject("programs/fileMgr")
 getObject("programs/control")
 getObject("programs/view")
+getObject("programs/installer")
 print("Run SimOS now? (y/n)")
 _, key = os.pullEvent("key")
 if key~=keys.y then return end
