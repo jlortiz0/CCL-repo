@@ -31,7 +31,7 @@ if t.version > system.get("version") then
   write("Updating SimOS/registry...")
   local page = http.get("https://raw.github.com/jlortiz0/CCL-repo/master/SimOS/registry")
   local function indexOf(table, value)
-    for k, v in ipairs(table) do
+    for k, v in pairs(table) do
       if v==value then return k end
     end
   end
@@ -41,15 +41,17 @@ if t.version > system.get("version") then
     printError("Couldn't update the registry.")
     return
   end
-  for ok, ov in ipairs(tab) do
+  for ok, ov in pairs(tab) do
     if type(ov)=="table" then
-      for k, v in pairs(ov) do
-        if not table.contains(system.get(ok), v) then
+      for k, v in ipairs(ov) do
+        if not indexOf(system.get(ok), v) then
           local huh = system.get(ok)
           table.insert(huh, k, v)
           system.set(ok, huh)
         end
       end
+    elseif ok=="version" or not system.get(ok) then
+      system.set(ok, ov)
     end
   end
   system.saveSettings()
