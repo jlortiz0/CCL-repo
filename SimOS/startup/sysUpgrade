@@ -58,7 +58,7 @@ if t.version > system.get("version") then
   print("Restarting SimOS...")
   sleep(2)
   shell.run(system.mainFile)
-  error("Ignore this.", 0)
+  system.safemode = "exit"
 elseif ... then
 print("No update found...")
 end
