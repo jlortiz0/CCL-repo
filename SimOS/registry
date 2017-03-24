@@ -34,7 +34,7 @@
       "shell exit",
     },
   },
-  version = 0.7,
+  version = 0.71,
   apt = {
     repo = {
       1,
