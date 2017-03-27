@@ -1,34 +1,35 @@
 --This is a library, use os.loadAPI to start using it
 --Made by jlortiz
+local alpha = {"q","w","e","r","t","y","u","i","o","p","[","]","{","}","\\","|","`","~","1","2","3","4","5","6","7","8","9","0","-","_","=","+","!","@","#","$","%","&","^","*",")","(","a","s","d","f","g","h","j","k","l",";",":","\'","\"","z","x","c","v","b","n","m",",","<",">",".","?","/"}
+local function index(thing)
+for i=1, #alpha do
+if thing==alpha[i] then 
+return i 
+end
+end
+end
+
 function encrypt(str,pass)
+str = str:lower()
 local done, temp = ""
-local passplace = 1
+local pl = 1
 for i=1, #str do
-temp = string.byte(string.sub(str, i, i))+string.byte(string.sub(pass, passplace, passplace))
-done=done..string.char(temp)
-if passplace==#pass then passplace=0 end
-passplace = passplace + 1
+temp = index(string.sub(str, i, i))+index(string.sub(pass, pl, pl))
+done=done..alpha[temp]
+if pl==#pass then pl=0 end
+pl = pl + 1
 end
 return done
 end
 
 function decrypt(str,pass)
 local done, temp=""
-local passplace = 1
+local pl = 1
 for i=1, #str do
-temp = string.byte(string.sub(str, i, i))-string.byte(string.sub(pass, passplace, passplace))
-done=done..string.char(temp)
-if passplace==#pass then passplace=0 end
-passplace=passplace+1
+temp = index(string.sub(str, i, i))-index(string.sub(pass, pl, pl))
+done=done..alpha[temp]
+if pl==#pass then pl=0 end
+pl=pl+1
 end
 return done
-end
-
-function help()
-print("encryptlib.decrypt(string enc, string pass)")
-print("Tries to decrypt a string with the given password. May crash if the password is wrong.")
-print("")
-print("encryptlib.encrypt(string str, string pass)")
-print("Encrypts the string with the given password. Output will likely be unreadable by humans.")
-print("")
 end
