@@ -15,6 +15,9 @@ local done, temp = ""
 local pl = 1
 for i=1, #str do
 temp = index(string.sub(str, i, i))+index(string.sub(pass, pl, pl))
+while temp>#alpha do
+temp=temp-#alpha
+end
 done=done..alpha[temp]
 if pl==#pass then pl=0 end
 pl = pl + 1
@@ -27,6 +30,9 @@ local done, temp=""
 local pl = 1
 for i=1, #str do
 temp = index(string.sub(str, i, i))-index(string.sub(pass, pl, pl))
+while temp<1 do
+temp=temp+#alpha
+end
 done=done..alpha[temp]
 if pl==#pass then pl=0 end
 pl=pl+1
