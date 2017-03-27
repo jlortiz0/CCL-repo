@@ -10,7 +10,8 @@ end
 end
 
 function crypt1(str,pass)
-str = str:lower()
+str = string.lower(str)
+pass = string.lower(pass)
 local done, temp = ""
 local pl = 1
 for i=1, #str do
@@ -26,6 +27,8 @@ return done
 end
 
 function crypt2(str,pass)
+str = string.lower(str)
+pass = string.lower(pass)
 local done, temp=""
 local pl = 1
 for i=1, #str do
