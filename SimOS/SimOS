@@ -117,12 +117,6 @@ if ...~="-api" then
 else system.safemode = true
 end
 
-if not system.safemode then
-  if fs.exists(system.dir.."/registry.old") then
-      fs.delete(system.dir.."/registry.old")
-  end
-  fs.copy(system.dir.."/registry", system.dir.."/registry.old")
-end
 local h = fs.open(system.dir.."/registry", "r")
 local registry = textutils.unserialise(h.readAll())
 h.close()
