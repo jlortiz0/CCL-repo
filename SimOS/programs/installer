@@ -27,6 +27,8 @@ print("Install SimOS on this computer? (y/n)")
 local _, key = os.pullEvent("key")
 if key~=keys.y then return end
 
+--Add some kind of selector system so you can choose what to install
+
 getObject("SimOS")
 getObject("logo")
 getObject("registry")
@@ -34,7 +36,6 @@ getObject("startup/sysUpgrade")
 getObject("programs/apt")
 getObject("programs/fileMgr")
 getObject("programs/control")
-getObject("programs/view")
 getObject("programs/installer")
 print("Run SimOS now? (y/n)")
 _, key = os.pullEvent("key")

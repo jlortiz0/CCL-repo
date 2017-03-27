@@ -16,7 +16,7 @@ if ... then
     ver = tonumber(read())
     if not ver then
       print("Try again.")
-    else break
+    else break end
   end
   table.insert(stuff, ver)
   local h = fs.open(args, "r")
@@ -26,7 +26,7 @@ if ... then
   h.write(textutils.serialize(stuff))
   h.close()
   return
-end end
+end
 local id, msg, list, h
 while true do
   id, msg = rednet.receive("SimOSAPT")

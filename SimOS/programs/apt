@@ -1,5 +1,5 @@
 local tArgs = {...}
-
+if not (system and system.mainFile and system.mainFile:find("SimOS")) then shell.run("/SimOS/SimOS", "-api") end
 if tArgs[1]=="update" then
   local repos = system.get("apt").repo
   local info = {}
