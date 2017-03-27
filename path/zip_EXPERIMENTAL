@@ -1,0 +1,78 @@
+print("JZip by jlortiz")
+
+local tArgs = { ... }
+if not tArgs[1] then
+printError("Usage: JZip <directory>")
+return end
+tArgs[2] = fs.getName(tArgs[1]) or tArgs[1]
+tArgs[1] = shell.resolve(tArgs[1])
+if not fs.exists(tArgs[1]) or not fs.isDir(tArgs[1]) then
+printError("No such directory")
+return end
+
+local function zip(dir)
+local fat = {}
+for _,file in pairs(fs.list(dir)) do
+if fs.isDir(fs.combine(dir, file)) then
+print("Zipping directory "..file)
+table.insert(fat, {file, zip(fs.combine(dir, file))})
+else
+local fi = fs.open(fs.combine(dir,file), "r")
+print("Zipping file "..file)
+table.insert(fat, {file, fi.readAll()})
+fi.close()
+end end 
+return fat end
+
+local tab = zip(tArgs[1])
+local times = {}
+local function compress1(tab)
+  for _,v in pairs(tab) do
+    if type(v)=="table" then
+      compress1(v)
+    else
+      for m in string.gmatch(v, "[^ \n(),]+") do
+        if #m>2 then
+          if not times[m] then times[m]=1
+          else times[m] = times[m] + 1 end
+        end
+      end
+    end
+  end
+end
+print("Running compression...")
+compress1(tab)
+local tdos, k = {}, nil
+while true do
+  k=next(times, k)
+  if k==nil then break end
+  if times[k]>5 then
+    table.insert(tdos, k)
+  end
+end
+table.sort(tdos, function(a,b) return times[a]>times[b] end)
+while #tdos>95 do
+  table.remove(tdos)
+end
+local function compress2(tab)
+  for k, v in pairs(tab) do
+    if type(v)=="table" then
+      tab[k]=compress2(v)
+    else
+      for nk,nv in pairs(tdos) do
+        print(nv)
+        v:gsub(nv, "`"..string.char(nk+20))
+        tab[k]=v
+      end
+    end
+    return tab
+  end
+end
+tab=compress2(tab)
+table.insert(tab, 1, "JZip")
+local fin = fs.open(shell.resolve(tArgs[2]..".jzip"), "w")
+fin.writeLine("print(\"Use JUnzip to unzip this file\")")
+fin.writeLine("return")
+fin.write(textutils.serialise(tab))
+fin.close()
+print("Zipping complete.")
