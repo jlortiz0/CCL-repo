@@ -10,7 +10,9 @@ if not http then
   print("HTTP not availible! Please enable it in ComputerCraft.cfg or use an alternate install method.")
   return
 end
-
+if parallel.waitForAny(function() sleep(4) end, function() if not http.get("http://raw.githubusercontent.com/jlortiz0/CCL-repo/master/SimOS/logo") then sleep(5) end end)==1 then
+  print("Could not contact GitHub, are you connected to the Internet?")
+end
 local function getObject(file)
   write("Getting SimOS/"..file.."...")
   local page = http.get("https://raw.github.com/jlortiz0/CCL-repo/master/SimOS/"..file)
@@ -20,7 +22,7 @@ local function getObject(file)
   page.close()
   print("Done!")
 end
---Add something for detecting existing installs
+
 print("Install SimOS on this computer? (y/n)")
 local _, key = os.pullEvent("key")
 if key~=keys.y then return end
