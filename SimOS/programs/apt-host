@@ -1,3 +1,32 @@
+if ... then
+  local args = shell.resolve(...)
+  if (not fs.exists(args)) or fs.isDir(args) then
+    printError("Couldn't find the specified file!")
+    return
+  end
+  if fs.exists("apt-share/"..fs.getName(args)) then
+    print("Package already exists, overwrite? (y/n)")
+    local _, key = os.pullEvent()
+    if key ~= keys.n then return end
+  end
+  write("Name of program:")
+  local stuff, ver = {read(), fs.getName(args), "rm "..fs.getName(args), fs.getName(args)}
+  while true do
+    write("Version:")
+    ver = tonumber(read())
+    if not ver then
+      print("Try again.")
+    else break
+  end
+  table.insert(stuff, ver)
+  local h = fs.open(args, "r")
+  table.insert(stuff, h.readAll())
+  h.close()
+  h=fs.open("apt-share/"..fs.getName(args), "w")
+  h.write(textutils.serialize(stuff))
+  h.close()
+  return
+end end
 local id, msg, list, h
 while true do
   id, msg = rednet.receive("SimOSAPT")
