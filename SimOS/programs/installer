@@ -1,8 +1,8 @@
-if fs.exists("/SimOS/startup/sysUpgrade") then
+if (fs.find("*SimOS/SimOS")[1] or fs.find("*/SimOS/SimOS")[1]) then
   print("SimOS already installed, do you want to try to upgrade it?(y/n)")
   local _, key = os.pullEvent("key")
   if key~=keys.y then return end
-  shell.run("/"..system.dir.."/startup/sysUpgrade -verbose")
+  shell.run("/"..(fs.find("*SimOS/startup/sysUpgrade")[1] or fs.find("*/SimOS/startup/sysUpgrade")[1]), "-verbose")
   return
 end
 
@@ -27,16 +27,61 @@ print("Install SimOS on this computer? (y/n)")
 local _, key = os.pullEvent("key")
 if key~=keys.y then return end
 
---Add some kind of selector system so you can choose what to install
+local function menu(m, pt, n)
+  pt=pt or ""
+  n=n or 1
+  local s,h = term.getSize()
+  h=h-5
+  if n<(h/2) then
+    s=1
+  elseif n>(#m-h+1) then
+    s=#m-h+1
+  else
+    s=n
+  end
+  while true do
+    term.clear()
+    term.setCursorPos(1,1)
+    print(pt)
+    for i=s,s+h do
+      if i==n then 
+        print("-> ["..m[i].."]")
+      else 
+        print(m[i])
+      end 
+      if #m==i then break end
+    end
+    print("Use arrow keys and enter to select")
+    local _,key = os.pullEvent("key")
+    if key == 200 and n>1 then 
+      n=n-1
+      if n<s then s=s-1 end
+    elseif key == 208 and n<#m then 
+      n=n+1
+      if s<#m-h+1 and n>s+h then s=s+1 end
+    elseif key == 28 then return n end
+  end 
+end
+local n=1
+local stuff = {"SimOS"=true, "logo"=true, "registry"=true, "startup/sysUpgrade"=true, "programs/apt"=true, "programs/fileMgr"=true, "programs/control"=true, "programs/installer"=false, "programs/apt-host"=false}
+local men = {{"APT server host","Done"}, {"programs/apt-host"}}
+while true do
+	n=menu(men[1], "Please select optional components:\n", n)	
+	if n==#men[1] then break
+	elseif n==1 then
+		if stuff[men[2][n]] then
+			stuff[men[2][n]] = false
+			men[1][n]=string.sub(men[1][n], 4)
+		else
+			stuff[men[2][n]]=false
+			men[1][n]="[*]"..men[1][n]
+		end
+	end
+end
 
-getObject("SimOS")
-getObject("logo")
-getObject("registry")
-getObject("startup/sysUpgrade")
-getObject("programs/apt")
-getObject("programs/fileMgr")
-getObject("programs/control")
-getObject("programs/installer")
+for k,v in pairs(stuff) do
+	if v then getObject(k) end
+end
 print("Run SimOS now? (y/n)")
 _, key = os.pullEvent("key")
 if key~=keys.y then return end
