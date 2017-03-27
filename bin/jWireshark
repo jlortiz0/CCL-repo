@@ -1,0 +1,15 @@
+print("Monitoring connections...")
+local oldsend = rednet.send
+rednet.send=function(id, msg, prot)
+  print(table.unpack({id, textutils.serialise(msg), prot}))
+  oldsend(id, msg, prot)
+end
+
+while true do 
+  local event, id, msg, prot = os.pullEventRaw("rednet_message")
+  if event=="terminate" then break end
+  print(id)
+  print(textutils.serialise(msg))
+  print(prot)
+end
+rednet.send = oldsend

@@ -2,9 +2,18 @@ print("Use JUnzip to unzip this file")
 return
 {
   "JZip",
-  {
-    "JWebServer",
-    "shell.run(\"clear\")\
+  webserver = {
+    [ "404" ] = "printError(\"404 error\")\
+print(\"The server could not find the webpage.\")\
+print(\"If a link brought you here, please contact the administrator.\")\
+print(\"\")\
+print(\"Press any key to go to the homepage...\")\
+os.pullEvent(\"key\")\
+browser.redirect(\"/index\") ",
+    index = "print(\"Hello World!\")\
+print(os.getComputerID())",
+  },
+  JWebServer = "shell.run(\"clear\")\
 print(\"Web Server by jlortiz\")\
 print(\"This is computer \"..os.computerID())\
 if not rednet.isOpen() then\
@@ -31,26 +40,4 @@ end end\
 rednet.send(cid, f.readAll(), \"8080\")\
 f.close()\
 end",
-  },
-  {
-    "webserver",
-    {
-      {
-        "404",
-        "printError(\"404 error\")\
-print(\"The server could not find the webpage.\")\
-print(\"If a link brought you here, please contact the administrator.\")\
-print(\"\")\
-print(\"Press any key to go to the homepage...\")\
-os.pullEvent(\"key\")\
-redirect(\"/index\") \
-",
-      },
-      {
-        "index",
-        "print(\"Hello World!\")\
-print(os.getComputerID())",
-      },
-    },
-  },
 }
