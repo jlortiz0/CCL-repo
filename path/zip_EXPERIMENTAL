@@ -14,12 +14,12 @@ local function zip(dir)
 local fat = {}
 for _,file in pairs(fs.list(dir)) do
 if fs.isDir(fs.combine(dir, file)) then
-print("Zipping directory "..file)
-table.insert(fat, {file, zip(fs.combine(dir, file))})
+--print("Zipping directory "..file)
+fat[file]=zip(fs.combine(dir, file))
 else
 local fi = fs.open(fs.combine(dir,file), "r")
-print("Zipping file "..file)
-table.insert(fat, {file, fi.readAll()})
+--print("Zipping file "..file)
+fat[file] = fi.readAll()
 fi.close()
 end end 
 return fat end
@@ -61,7 +61,7 @@ local function compress2(tab)
     else
       for nk,nv in pairs(tdos) do
         print(nv)
-        v:gsub(nv, "`"..string.char(nk+20))
+        v=string.gsub(v,nv.."+", "`"..string.char(nk+20))
         tab[k]=v
       end
     end
