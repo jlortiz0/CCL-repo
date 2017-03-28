@@ -1,0 +1,209 @@
+if not fs.isDir("/users/") then fs.makeDir("/users") end
+term.clear()
+term.setCursorPos(1,1)
+local set = {
+  verbose=false,
+  --Set below to nil to disable admin password
+  adminpass="admin",
+  allownewuser=true,
+  sendmailremote=true,
+  getmailremote=true,
+  --The below should be kept as true
+  run=true,
+}
+
+local function connect(cid)
+  local function getMsg()
+    local id, msg = rednet.receive("JMail", 600)
+    if cid ~= id and id ~= nil then return getMsg()
+    elseif not id then error("Dropped client "..cid)
+    else return msg end
+  end
+  while true do
+    local msg = getMsg()
+    if msg=="QUIT" then
+      if set.verbose then print(cid.." disconnected") end
+      return
+    elseif msg=="REGA" then rednet.send(cid, set.allownewuser, "JMail")
+    elseif type(msg)=="table" then
+      if msg[1]=="VRFY" and type(msg[2])=="string" then rednet.send(cid, fs.exists("/users/"..msg[2]) and msg[2]~="", "JMail")
+      elseif msg[1]=="REG" and set.allownewuser then
+        if not fs.exists("/users/"..msg[2]) then
+          fs.makeDir("/users/"..msg[2].."/mail")
+          local f = fs.open("/users/"..msg[2].."/pass", "w")
+          f.write(msg[3])
+          f.close()
+          f = fs.open("/users/"..msg[2].."/mail/Welcome from SERVER@"..os.getComputerID(), "w")
+          f.write("Hello "..msg[2]..",\nWelcome to mail server "..os.getComputerID()..".\nWe hope that you will find our services satisfactory.\nRemember, your password is "..msg[3]..".\n\nThanks,\nAdmin")
+          f.close()
+          rednet.send(cid, true, "JMail")
+        else rednet.send(cid, false, "JMail") end
+      elseif msg[1]=="AUTH" and fs.exists("/users/"..msg[2]) then
+        local f = fs.open("/users/"..msg[2].."/pass", "r")
+        local ps = f.readAll()
+        f.close()
+        if ps==msg[3] then
+          local un=msg[2]
+          rednet.send(cid, true, "JMail")
+          while true do
+            local msg = getMsg()
+            if msg=="QUIT" then 
+              if set.verbose then print(cid.." disconnected") end
+              return
+            elseif type(msg)=="table" then
+                if msg[1]=="GET" and type(msg[2])=="string" then
+                    if fs.isDir("/users/"..un.."/mail/"..msg[2]) then
+                        local reply = {fs.list("/users/"..un.."/mail/"..msg[2]), {}}
+                        for i=1, #reply[1] do
+                            table.insert(reply[2], fs.isDir("/users/"..un.."/mail/"..msg[2]..reply[1][i]))
+                        end
+                        rednet.send(cid, reply, "JMail")
+                    else
+                        local h = fs.open("/users/"..un.."/mail/"..msg[2], "r")
+                        rednet.send(cid, h.readAll(), "JMail")
+                        h.close()
+                    end
+                elseif msg[1]=="DEL" and not string.find(msg[2],"../") then fs.delete("/users/"..un.."/mail/"..msg[2])
+                elseif msg[1]=="MV" and not (string.find(msg[2], "../") or string.find(msg[3], "../")) then fs.move("/users/"..un.."/mail/"..msg[2], "/users/"..un.."/mail/"..msg[3])
+                elseif msg[1]=="PCHK" then
+                  local f = fs.open("/users/"..un.."/pass", "r")
+                  rednet.send(cid, f.readAll()==msg[2], "JMail")
+                  f.close()
+                elseif msg[1]=="PC" then
+                  local f = fs.open("/users/"..un.."/pass", "r")
+                  if f.readAll() ~= msg[2] then 
+                    rednet.send(cid, false, "JMail")
+                  else
+                    f.close()
+                    f=fs.open("/users/"..un.."/pass", "w")
+                    f.write(msg[3])
+                    rednet.send(cid, true, "JMail")
+                  end
+                  f.close()
+                elseif msg[1]=="VRFY" and type(msg[2])=="string" then
+                  rednet.send(cid, fs.exists("/users/"..msg[2]) and msg[2]~="", "JMail")
+                elseif msg[1]=="DATA" and pcall(function() table.concat(msg, " ") end) then
+                  if msg[2]==os.getComputerID() and set.sendmailremote then
+                    if fs.exists("/users/"..msg[3]) and msg[3]~="" then
+                      if fs.exists("/users/"..msg[3].."/mail/"..msg[4].." from "..un.."@"..os.getComputerID()) then
+                        rednet.send(cid, "Pick a different subject.", "JMail")
+                      else
+                        local h = fs.open("/users/"..msg[3].."/mail/"..msg[4].." from "..un.."@"..os.getComputerID(), "w")
+                        h.write(msg[5])
+                        h.close()
+                        rednet.send(cid, "Mail sent.", "JMail")
+                      end
+                    else
+                      rednet.send(cid, "No such user.", "JMail")
+                    end
+                  else
+                    local oldcid = cid
+                    cid = msg[2]
+                    rednet.send(cid, {"SENDMAIL", un, table.unpack(msg,3)},"JMail")
+                    local reply = getMsg()
+                    cid = oldcid
+                    rednet.send(cid, reply, "JMail")
+                  end
+                else
+                  rednet.send(cid, false, "JMail")
+                end
+            else
+              rednet.send(cid, false, "JMail")
+            end
+          end
+        else
+          rednet.send(cid, false, "JMail")
+        end
+      else
+        rednet.send(cid, false, "JMail")
+      end
+    else
+        rednet.send(cid, false, "JMail")
+    end
+  end
+end
+
+local function connector(n)
+  while true do
+    if n and not set.run then return end
+    local id, msg = rednet.receive("JMail")
+    if msg=="HELO" then
+      if set.run then
+        rednet.send(id, "OK connect", "JMail")
+        if set.verbose then print(id.." has connected") end
+        parallel.waitForAny(connector, function() local ok, err = pcall(function() connect(id) end); if not ok then printError(err) end end)
+        if n then connector(true) end
+        return
+      else
+        if set.verbose then print(id.."'s connect rejected") end
+        rednet.send(id, "System shutting down", "JMail")
+      end
+    elseif type(msg)=="table" and msg[1]=="SENDMAIL" then
+      if set.getmailremote and #msg>4 and pcall(function() table.concat(msg, "") end) then
+        if set.verbose then print(id.." sendmail connected") end
+        if fs.exists("/users/"..msg[3]) and msg[3]~="" then
+          if fs.exists("/users/"..msg[3].."/mail/"..msg[4].." from "..msg[2].."@"..id) then
+            rednet.send(id, "Pick a different subject.", "JMail")
+          else
+            local h = fs.open("/users/"..msg[3].."/mail/"..msg[4].." from "..msg[2].."@"..id, "w")
+            h.write(msg[5])
+            h.close()
+            rednet.send(id, "Mail sent.", "JMail")
+          end
+        else
+          rednet.send(id, "No such user.", "JMail")
+        end
+      else
+        if set.verbose then print(id.."'s sendmail rejected") end
+        rednet.send(id, "The remote server does not accept outside mail.", "JMail")
+      end
+    end
+  end
+end
+
+local function console()
+  local locked = true
+  while true do
+    if locked and set.adminpass then
+      write("Password:")
+      if read("*")==set.adminpass then
+        locked=false
+      end
+    else
+      write("mail>")
+      local cmd = read()
+      if cmd=="lock" and set.adminpass then
+        locked=true
+        term.clear()
+        term.setCursorPos(1,1)
+      elseif cmd=="exit" then
+        set.run = false
+        print("Server shutting down...")
+        print("Waiting for current clients to disconnect...")
+        os.queueEvent("rednet_message", os.getComputerID(), "HELO", "JMail")
+        return
+      else
+        local tcmd = {}
+        for k in string.gmatch(cmd, "[^ \t]+") do
+          table.insert(tcmd, k)
+        end
+        if tcmd[1]=="dc" then
+          os.queueEvent("rednet_message", tonumber(tcmd[2]), "QUIT", "JMail")
+        elseif tcmd[1]=="cps" then
+          if fs.isDir("/users/"..tcmd[2]) then
+            local f = fs.open("/users/"..tcmd[2].."/pass", "w")
+            f.write(tcmd[3])
+            f.close()
+            print("Done.")
+          end
+        elseif tcmd[1]=="acps" and (tcmd[2]==set.adminpass or set.adminpass==nil) then
+          set.adminpass=tcmd[3]
+          print("Success.")
+        else
+          printError("Unknown command.")
+        end
+      end
+    end
+  end
+end
+parallel.waitForAll(console, function() connector(true) end)
