@@ -61,7 +61,7 @@ local function compress2(tab)
     else
       for nk,nv in pairs(tdos) do
         print(nv)
-        v=string.gsub(v,nv.."+", "`"..string.char(nk+20))
+        v=string.gsub(v,nv.."+", "`"..string.char(nk+36))
         tab[k]=v
       end
     end
