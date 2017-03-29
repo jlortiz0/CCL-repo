@@ -14,17 +14,15 @@ local function zip(dir)
 local fat = {}
 for _,file in pairs(fs.list(dir)) do
 if fs.isDir(fs.combine(dir, file)) then
---print("Zipping directory "..file)
 fat[file]=zip(fs.combine(dir, file))
 else
 local fi = fs.open(fs.combine(dir,file), "r")
---print("Zipping file "..file)
 fat[file] = fi.readAll()
 fi.close()
 end end 
 return fat end
 
-local tab = zip(tArgs[1])
+tab = zip(tArgs[1])
 local times = {}
 local function compress1(tab)
   for _,v in pairs(tab) do
@@ -42,7 +40,7 @@ local function compress1(tab)
 end
 print("Running compression...")
 compress1(tab)
-local tdos, k = {}, nil
+tdos, k = {}, nil
 while true do
   k=next(times, k)
   if k==nil then break end
@@ -54,21 +52,22 @@ table.sort(tdos, function(a,b) return times[a]>times[b] end)
 while #tdos>95 do
   table.remove(tdos)
 end
+table.sort(tdos)
 local function compress2(tab)
   for k, v in pairs(tab) do
     if type(v)=="table" then
       tab[k]=compress2(v)
     else
-      for nk,nv in pairs(tdos) do
-        print(nv)
-        v=string.gsub(v,nv.."+", "`"..string.char(nk+36))
-        tab[k]=v
+      for nk,nv in ipairs(tdos) do
+        pcall(function() v = v:gsub(nv, "`"..string.char(nk+0x20)) end)
       end
+      tab[k]=v
     end
-    return tab
   end
+  return tab
 end
 tab=compress2(tab)
+table.insert(tab, 1, tdos)
 table.insert(tab, 1, "JZip")
 local fin = fs.open(shell.resolve(tArgs[2]..".jzip"), "w")
 fin.writeLine("print(\"Use JUnzip to unzip this file\")")
