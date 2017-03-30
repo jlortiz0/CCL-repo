@@ -1,0 +1,214 @@
+print("Use JUnzip to unzip this file")
+return
+{
+  "JZip",
+  {
+    "accounts",
+    {},
+  },
+  {
+    "getmail",
+    "local tArgs={...}\
+if #tArgs<2 then error(\"Need more args\") else \
+id=tonumber(tArgs[1])\
+end\
+local rf=tArgs[2]\
+print(rf)\
+rednet.send(id, \"connected\", rf)\
+local _, un=rednet.receive(rf, 10)\
+local _, from=rednet.receive(rf, 10)\
+local _, sub=rednet.receive(rf, 10)\
+local _, body=rednet.receive(rf, 10)\
+if fs.exists(\"/accounts/\"..un) then\
+local h=fs.open(\"/accounts/\"..un..\"/inbox/\"..sub..\" from \"..from..\"@\"..id, \"w\")\
+for i=1,#body do\
+h.writeLine(body[tonumber(i)])\
+end\
+h.close()\
+end\
+multishell.setFocus(multishell.getCurrent())\
+os.queueEvent(\"char\", \"a\")\
+shell.exit()",
+  },
+  {
+    "mailserver",
+    "print(\"Clearing sendmail data...\")\
+fs.delete(\"\\sent/*\")\
+print(\"Loading configs...\")\
+set=fs.open(\"ms.config\", \"r\")\
+set.readLine()\
+set.readLine()\
+os.createAcct=set.readLine()\
+set.readLine()\
+os.allowSendMail=set.readLine()\
+set.readLine()\
+set.allowGetMail=set.readLine()\
+set.readLine()\
+set.allowTermination = set.readLine()\
+set.close()\
+if set.allowTermination == \"false\" then\
+os.pullEvent = os.pullEventRaw\
+end\
+shell.run(\"clear\")\
+print(\"Mail Server by jlortiz\")\
+print(\"This window serves as a task starter for\")\
+print(\"client to server communications.\")\
+print(\"There is no user interaction here.\")\
+rednet.host(\"jmailserver\", tostring(os.getComputerID()))\
+while true do\
+id, msg, prot = rednet.receive()\
+if prot==\"maillogin\" and msg==\"connect\" then\
+rednet.send(id, \"login\", tostring(os.getComputerID())..\"-\"..tostring(id))\
+shell.run(\"bg msconnect \"..id)\
+end\
+if prot==\"sendmail\" and set.allowGetMail == \"true\" then\
+shell.run(\"bg getmail \"..id..\" \"..msg)\
+end\
+end",
+  },
+  {
+    "ms.config",
+    "--Do not add or remove comments from this file\
+--Can anyone create an account?\
+true\
+--Can mail be sent to other servers?\
+true\
+--Can mail be accepted from other servers?\
+true\
+--Allow termination of the mailserver program?\
+true",
+  },
+  {
+    "msconnect",
+    "\
+local function logged(id, un, prot)\
+while true do\
+print(\"loggedin\")\
+local _, input=rednet.receive(prot, 60)\
+if input==\"logout\" or not input then break\
+elseif input==\"send\" then\
+local _, ms=rednet.receive(prot, 60)\
+local _, sun=rednet.receive(prot, 60)\
+local _, sub=rednet.receive(prot, 60)\
+local _, body=rednet.receive(prot, 600)\
+if tonumber(ms)==os.getComputerID() then\
+if not fs.exists(\"/accounts/\"..sun) then rednet.send(temp, \"badun\", prot); close()\
+else\
+local h=fs.open(\"/accounts/\"..sun..\"/inbox/\"..sub..\" from \"..un..\"@\"..ms, \"w\")\
+h.writeLine(body[1])\
+h.writeLine(body[2])\
+h.writeLine(body[3])\
+h.writeLine(body[4])\
+h.writeLine(body[5])\
+h.close()\
+print(ms..sun..sub)\
+rednet.send(id, \"sent\", prot)\
+end\
+elseif os.allowSendMail == \"true\" then\
+rednet.send(tonumber(ms), \"connect\", \"maillogin\")\
+local _, msg = rednet.receive(ms..\"-\"..os.computerID(), 10)\
+if msg==\"login\" then\
+rednet.send(tonumber(ms), \"logout\", ms..\"-\"..os.computerID())\
+local h=fs.open(\"/sent/\"..ms..sun..sub, \"w\")\
+h.writeLine(ms)\
+h.writeLine(sun)\
+h.writeLine(un)\
+h.writeLine(sub)\
+h.writeLine(textutils.serialise(body))\
+h.close()\
+shell.run(\"sendmail /sent/\"..ms..sun..sub)\
+else\
+rednet.send(id, \"badms\", prot)\
+end\
+else rednet.send(id, \"nosend\", prot)\
+end\
+elseif input==\"inbox\" then\
+print(\"inbox\")\
+local inbox=fs.list(\"/accounts/\"..un..\"/inbox/\")\
+rednet.send(id, inbox, prot)\
+local _, input = rednet.receive(prot, 60)\
+if input~=#inbox+1 then\
+local h=fs.open(\"/accounts/\"..un..\"/inbox/\"..inbox[input], \"r\")\
+local message = h.readAll()\
+h.close()\
+rednet.send(id, message, prot)\
+local _, message=rednet.receive(prot, 60)\
+if message==\"1\" then\
+fs.delete(\"/accounts/\"..un..\"/inbox/\"..inbox[input])\
+print(\"msgdelete\")\
+end end\
+elseif input==\"delete\" then\
+fs.delete(\"/accounts/\"..un)\
+print(\"acctdelete \"..un)\
+break\
+end end end\
+\
+local function conn(...)\
+local prot=os.getComputerID()..\"-\"..(...)\
+local id, msg = rednet.receive(prot, 60)\
+if msg==\"login\" then\
+print(\"login\")\
+local _, un=rednet.receive(60)\
+local _, ps=rednet.receive(60)\
+print(un)\
+if not fs.exists(\"/accounts/\"..un) then rednet.send(id, \"badun\", prot)\
+else\
+local h = fs.open(\"/accounts/\"..un..\"/info\", \"r\")\
+if not h.readAll()==ps then rednet.send(id, \"badps\", prot)\
+else\
+h.close()\
+rednet.send(id, \"logged\", prot)\
+logged(id, un, prot)\
+end\
+end\
+else if msg==\"register\" then\
+if os.createAcct == \"true\" then\
+rednet.send(id, \"yes\", prot)\
+print(\"registering\")\
+local _, un = rednet.receive(60)\
+print(un)\
+local _, ps = rednet.receive(60)\
+if fs.exists(\"/accounts/\"..un) then rednet.send(temp, \"badun\", prot)\
+else\
+fs.makeDir(\"/accounts/\"..un)\
+local h=fs.open(\"/accounts/\"..un..\"/info\", \"w\")\
+h.write(ps)\
+h.close()\
+fs.makeDir(\"/accounts/\"..un..\"/inbox\")\
+rednet.send(id, \"registered\", prot)\
+end\
+else\
+rednet.send(id, \"no\", prot)\
+end end end end\
+\
+conn(...)\
+multishell.setFocus(multishell.getCurrent())\
+os.queueEvent(\"char\", \"a\")\
+shell.exit()",
+  },
+  {
+    "send",
+    {},
+  },
+  {
+    "sendmail",
+    "local tArgs = { ... }\
+if #tArgs==0 then error(\"Not enough arguments\") else file=tArgs[1] end\
+print(file)\
+local h = fs.open(file, \"r\")\
+print(h)\
+local msid=tonumber(h.readLine())\
+local un=h.readLine()\
+local from=h.readLine()\
+local sub=h.readLine()\
+local rednet.send(msid, file, \"sendmail\")\
+local _, msg = rednet.receive(file, 10)\
+if msg==\"connected\" then\
+rednet.send(msid, un, file)\
+rednet.send(msid, from, file)\
+rednet.send(msid, sub, file)\
+local message = textutils.unserialise(h.readLine())\
+rednet.send(msid, message, file)\
+end",
+  },
+}
