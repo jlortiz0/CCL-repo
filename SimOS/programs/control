@@ -49,7 +49,7 @@ while true do
     end
     n=2
     system.saveSettings()
-  elseif n==4 then
+  elseif n==3 then
     n=1
     while true do
       local apt = system.get("apt")
@@ -59,16 +59,20 @@ while true do
         apt.pkl = {}
         system.set("apt", apt)
         system.saveSettings()
+        print("Cleared.")
+        sleep(1.2)
       elseif n==3 then
         write("Computer ID of repo:")
         shell.run("apt addrepo", read())
         sleep(1.5)
-      else table.remove(apt, n-3)
+      else
+      	shell.run("apt rmrepo "..apt.repo[n-3])
+      	n=n-1
       end
     end
     system.saveSettings()
-    n=4
-  elseif n==5 then
+    n=3
+  elseif n==4 then
     while true do
       p="SimOS version "..system.get("version").."\nRunning on "
       if os.computerLabel() then
@@ -78,6 +82,7 @@ while true do
       end
       local n=DM({"OK", "Change program exit pause time"}, p)
       if n==2 then
+      	print("Current value: "..system.get("endwait"))
         write("New value(in seconds):")
         local val = tonumber(read())
         if not val then
