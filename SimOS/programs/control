@@ -40,9 +40,11 @@ while true do
         print("Press any key to continue...")
         os.pullEvent("key")
         table.insert(set.prog, #set.prog, loadfile(system.dir.."/programs/fileMgr", _ENV)("-select"))
-        print("Name of program "..fs.getName(set.prog[#set.prog-1]))
-        table.insert(set.proguf, #set.proguf, read())
-        system.set("fileMgr", set)
+        if set.prog[#set.prog-1] then
+          print("Name of program "..fs.getName(set.prog[#set.prog-1]))
+          table.insert(set.proguf, #set.proguf, read())
+          system.set("fileMgr", set)
+        end
       else
         break
       end
