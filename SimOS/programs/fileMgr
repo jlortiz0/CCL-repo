@@ -9,7 +9,7 @@ if path=="-select" then
 end
 local set = system.get("fileMgr")
 if tArgs[1]=="-select" then
-  set.proguf[1]="Select this file"
+  set.proguf={"Select this file", "Edit", "Cancel"}
 end
 local n = 1
 while true do
@@ -30,7 +30,7 @@ while true do
   table.insert(fl, "Exit")
   n = system.drawMenu(fl, "Directory of "..path..":\n", n)
   if n==#fl then 
-    break
+    return nil
   elseif n==#fl-1 and not fs.isReadOnly(path) then
     n = system.drawMenu({"New file","New folder", "Cancel"}, "Create new in directory "..path..":\n")
     if n==2 then
@@ -71,7 +71,6 @@ while true do
     end 
   end 
 end
-if ori<#system.get("programs") then
+if ori<#system.get("programs") and tArgs[1]~="-select" then
   system.saveSettings()
 end
-set.proguf[1]="Run"
