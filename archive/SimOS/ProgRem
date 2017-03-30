@@ -1,3 +1,4 @@
+--Last known modification 1/15/17
 local DM = system.drawMenu
 local dir = shell.dir()
 shell.setDir("/SimOS/programs/")
