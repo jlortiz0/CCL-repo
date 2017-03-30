@@ -1,0 +1,44 @@
+local path = ... or "/SimOS/user/"
+while true do
+local fl = fs.list(path)
+if path ~= "//" then table.insert(fl, 1, "..") end
+table.insert(fl, "New...")
+table.insert(fl, "Exit")
+local n = system.drawMenu(fl, {path})
+if n==#fl then return
+elseif n==#fl-1 and fs.isReadOnly(path)==false then
+n = system.drawMenu({"New file","New folder", "Cancel"})
+if n==2 then
+write("Folder Name:")
+local input = read()
+if not fs.exists(fs.combine(path,input)) then
+fs.makeDir(fs.combine(path,input))
+else printError("Folder exists.") sleep(1) end
+elseif n==1 then
+write("File name:")
+local input = read()
+if not fs.exists(fs.combine(path,input)) then
+shell.setDir(path)
+shell.run("edit", input)
+shell.setDir("/SimOS/programs")
+else printError("File exists.") sleep(1) end
+end
+else
+if fs.isDir(fs.combine(path,fl[n])) then
+path = "/"..shell.resolve(path..fl[n]).."/"
+else 
+local act = system.drawMenu({"Run", "Edit", "Add as program", "Delete", "Cancel"})
+if act==1 then shell.run(path..fl[n]) sleep(2)
+elseif act==2 then shell.run("edit", path..fl[n])
+elseif act==3 then 
+act = fs.open("/SimOS/programs/programs", "r")
+local progs = textutils.unserialise(act.readAll())
+act.close()
+write("Name of program:")
+table.insert(progs, {read(), path..fl[n], "rmlistentry"})
+act = fs.open("/SimOS/programs/programs", "w")
+act.write(textutils.serialise(progs))
+act.close()
+elseif act==4 then
+fs.delete(path..fl[n])
+end end end end

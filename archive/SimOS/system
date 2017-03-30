@@ -1,0 +1,109 @@
+term.clear()
+term.setCursorPos(1,1)
+system = {}
+function system.drawMenu(menu, pt)
+if not menu then return end
+local n=1
+local len = #menu
+while true do
+term.clear()
+term.setCursorPos(1,1)
+if type(pt)=="table" then
+for i=1, #pt do
+print(pt[i])
+end
+else pt = "" end
+for i=1,len do
+if i==n then 
+print("-> "..menu[i])
+if i>(15-#pt) then break end
+else 
+print(menu[i])
+if i>(15-#pt) and i>n then break end
+end end
+print("Use arrow keys and enter to select")
+local _,key = os.pullEvent("key")
+if key == 200 and n>1 then n=n-1
+elseif key == 208 and n<len then n=n+1
+elseif key == 28 then return n end
+end end
+
+local function getKeyEvent(n)
+if type(n) ~= "number" then return end
+while true do
+local _,key = os.pullEvent("key")
+if key==n then return
+end end end
+
+print("Press F8 or Fn+F8 to pause startup...")
+if parallel.waitForAny(function() getKeyEvent(66) end, function() sleep(2) end)==1 then
+local n = system.drawMenu({"Continue boot", "Exit to CraftOS", "Boot from Disk"})
+if n==3 then
+local disks = {"Don't boot from disk"}
+local dp = {""}
+for _, side in ipairs(peripheral.getNames()) do
+if disk.hasData(side) then
+local diskStartup = shell.resolveProgram("/"..disk.getMountPath(side).."/startup")
+if diskStartup then
+table.insert(disks, "Disk on "..side)
+table.insert(dp, diskStartup)
+end end end
+n = system.drawMenu(disks)
+if n==1 then shell.run("/SimOS/system")
+else shell.run(dp[n])
+end return
+else
+if n == 1 then shell.run("/SimOS/system") end
+return
+end end
+
+if fs.getFreeSpace("/SimOS/") < 2000 then
+textutils.slowPrint("BOOT WARNING")
+n = system.drawMenu({"Open Program Remover", "Open User Dir", "Exit to CraftOS", "Not now"}, {"The system has only "..fs.getFreeSpace("/SimOS/").." bytes left.", "Please free up some space."})
+if n==1 then shell.run("/SimOS/programs/ProgRem")
+elseif n==2 then shell.setDir("/SimOS/user/") end
+if n<4 then return
+end end
+
+local notifications = {}
+system.pushNotification = function(event)
+table.insert(notifications, event)
+end
+system.getNotifications = function()
+return notifications
+end
+system.delNotification = function(index)
+table.remove(notifications, index)
+end
+
+local n
+while true do
+local f = fs.open("/SimOS/programs/programs", "r")
+local progs = textutils.unserialise(f.readAll())
+f.close()
+local active = {}
+for i=1,#progs do
+table.insert(active, progs[i][1])
+end
+table.insert(active, "Exit")
+local welcome = {"Welcome to SimOS", "It is "..textutils.formatTime(os.time()).." on day "..os.day().."."}
+if #system.getNotifications()==1 then
+table.insert(welcome, "1 notification.")
+else table.insert(welcome, #system.getNotifications().." notifications.")
+end
+table.insert(welcome, "")
+n = system.drawMenu(active, welcome)
+if n == #active then
+n=system.drawMenu({"Shutdown", "Reboot", "Exit to CraftOS", "Cancel"})
+if n==1 then os.shutdown()
+elseif n==2 then os.reboot()
+elseif n==3 then return end
+else
+term.clear()
+term.setCursorPos(1,1)
+local dir = shell.dir()
+shell.setDir("/SimOS/programs/")
+shell.run(progs[n][2])
+shell.setDir(dir)
+sleep(2)
+end end

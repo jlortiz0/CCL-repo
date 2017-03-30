@@ -1,0 +1,27 @@
+{
+  {
+    "Program Remover",
+    "ProgRem",
+    "nope",
+  },
+  {
+    "Notification Center",
+    "sysNotif",
+    "nope",
+  },
+  {
+    "File Manager",
+    "fileMgr",
+    "nope",
+  },
+  {
+    "Program Store",
+    "Store",
+    "nope",
+  },
+  {
+    "Package Publisher",
+    "/SimOS/programs/storePublish",
+    "nope",
+  },
+}

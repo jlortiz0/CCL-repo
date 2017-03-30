@@ -1,0 +1,31 @@
+local DM = system.drawMenu
+local dir = shell.dir()
+shell.setDir("/SimOS/programs/")
+while true do
+local f = fs.open("/SimOS/programs/programs", "r")
+local progs = textutils.unserialise(f.readAll())
+f.close()
+local active = {}
+local n
+for i=1,#progs do
+table.insert(active, progs[i][1])
+end
+table.insert(active, "Exit")
+n=DM(active, {"Program Remover"})
+if n==#active then shell.setDir(dir) return
+else
+active = DM({"Remove", "Cancel"})
+if active==1 then
+if progs[n][3] == "rmlistentry" then
+table.remove(progs, n)
+elseif progs[n][3] == "nope" then
+print("Cannot remove this program.")
+sleep(1)
+else
+shell.run(progs[n][3])
+table.remove(progs, n)
+end
+f = fs.open("/SimOS/programs/programs", "w")
+f.write(textutils.serialise(progs))
+f.close() 
+end end end
