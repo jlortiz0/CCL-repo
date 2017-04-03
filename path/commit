@@ -1,0 +1,14 @@
+local function copyIt(path)
+  local li = fs.find(path.."*")
+  local remote = fs.find("CCL-repo/"..path.."*")
+  for i=1, #li do
+    if fs.isDir(li[i]) then 
+      if fs.exists("CCL-repo/"..li[i]) then
+      copyIt(li[i].."/")
+      end
+    else
+      
+    end
+  end
+end
+copyIt("")
