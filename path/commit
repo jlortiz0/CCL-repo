@@ -3,12 +3,24 @@ local function copyIt(path)
   local remote = fs.find("CCL-repo/"..path.."*")
   for i=1, #li do
     if fs.isDir(li[i]) then 
-      if fs.exists("CCL-repo/"..li[i]) then
-      copyIt(li[i].."/")
+      if not fs.exists("CCL-repo/"..li[i]) then
+        fs.makeDir("CCL-repo/"..li[i])
       end
+      if not fs.isDir("CCL-repo/"..li[i]) then
+        fs.delete("CCL-repo/"..li[i])
+      end
+      copyIt(li[i].."/")
     else
-      
+      if fs.exists("CCL-repo/"..li[i]) then
+        fs.delete("CCL-repo/"..li[i])
+      end
+      fs.copy(li[i], "CCL-repo/"..li[i])
     end
   end
 end
-copyIt("")
+copyIt("SimOS/")
+copyIt("path/")
+copyIt("apis/")
+--copyIt("archive/")
+copyIt("bin/")
+print("Done, please open GitHub Desktop.")
