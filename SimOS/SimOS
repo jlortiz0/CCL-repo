@@ -3,20 +3,17 @@ if ...~="-api" then
   term.setCursorPos(1,1)
 end
 system = {}
---Sometimes one returns nil, sometimes the other does. Not sure why. Anyway, check both.
-system.mainFile = "/"..(fs.find("*SimOS/SimOS")[1] or fs.find("*/SimOS/SimOS")[1])
 if ...=="-safe" then 
   system.safemode=true
   print("Safemode active.") 
 end 
-system.dir = "/"..fs.combine(system.mainFile, "..")
 function system.drawMenu(m, pt, n)
   if not m then return end
   pt=pt or ""
   n=n or 1
   local s,h = term.getSize()
   h=h-5
-  if n<(h/2) then
+  if n<h then
     s=1
   elseif n>(#m-h+1) then
     s=#m-h+1
@@ -46,14 +43,36 @@ function system.drawMenu(m, pt, n)
     elseif key == 28 then return n end
   end 
 end
+if settings.get("SimOS.location") then
+  system.mainFile = settings.get("SimOS.location")
+else
+  local locs = fs.find("*/SimOS")
+  if #locs > 1 then
+    system.mainFile = locs[system.drawMenu(locs, "Please select the folder where SimOS is installed:")]
+    settings.set("SimOS.location", system.mainFile)
+    settings.save(".settings")
+  else
+    system.mainFile=locs[1]
+  end
+end
+system.mainFile = "/"..system.mainFile
+system.dir = "/"..fs.combine(system.mainFile, "..")
+if not fs.exists(system.dir.."/programs/fileMgr") then
+  settings.unset("SimOS.location")
+  settings.save(".settings")
+  print("There was an error loading SimOS from the specified location.")
+  print("SimOS will correct this error when it is restarted.")
+  print("Press any key to continue...")
+  sleep(1)
+  os.pullEvent("key")
+  return
+end
 
-local function getKeyEvent(n)
-  if type(n) ~= "number" then return end
+function system.waitForKey(n)
   while true do
     local _,key = os.pullEvent("key")
-    if key==n then return
+    if key==n then return end 
   end 
-end 
 end
 
 if ...~="-api" then
@@ -88,7 +107,7 @@ if ...~="-api" then
   	end
   end
   print("Press F8 or Fn+F8 to pause startup...")
-  if parallel.waitForAny(function() getKeyEvent(66) end, function() sleep(3) end)==1 then
+  if parallel.waitForAny(function() system.waitForKey(66) end, function() sleep(3) end)==1 then
     local n = system.drawMenu({"Continue boot","Start in safemode", "Boot from Disk", "Exit to CraftOS", "Shutdown"}, "Startup paused.\n")
     if n==3 then
       local disks = {"Don't boot from disk"}
