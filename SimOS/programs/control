@@ -1,7 +1,7 @@
 local DM = system.drawMenu
 local n = 1
 while true do
-  n=DM({"Program Remover", "File Manager Settings", "Manage Repos", "System Info (and one more setting)", "Exit"}, "Control Panel\n", n)
+  n=DM({"Program Remover", "File Manager Settings", "Manage Repos", "System Info and Other", "Exit"}, "Control Panel\n", n)
   if n==5 then break
   elseif n==1 then
     while true do
@@ -40,11 +40,9 @@ while true do
         print("Press any key to continue...")
         os.pullEvent("key")
         table.insert(set.prog, #set.prog, loadfile(system.dir.."/programs/fileMgr", _ENV)("-select"))
-        if set.prog[#set.prog-1] then
-          print("Name of program "..fs.getName(set.prog[#set.prog-1]))
-          table.insert(set.proguf, #set.proguf, read())
-          system.set("fileMgr", set)
-        end
+        print("Name of program "..fs.getName(set.prog[#set.prog-1]))
+        table.insert(set.proguf, #set.proguf, read())
+        system.set("fileMgr", set)
       else
         break
       end
@@ -61,30 +59,26 @@ while true do
         apt.pkl = {}
         system.set("apt", apt)
         system.saveSettings()
-        print("Cleared.")
-        sleep(1.2)
       elseif n==3 then
         write("Computer ID of repo:")
         shell.run("apt addrepo", read())
         sleep(1.5)
-      else
-      	shell.run("apt rmrepo "..apt.repo[n-3])
-      	n=n-1
+      else table.remove(apt, n-3)
       end
     end
     system.saveSettings()
-    n=3
+    n=4
   elseif n==4 then
     while true do
       p="SimOS version "..system.get("version").."\nRunning on "
       if os.computerLabel() then
-        p=p..computerLabel().." with ID "..os.computerID()..".\n"
+        p=p..os.computerLabel().." with ID "..os.computerID()..".\n"
       else
         p=p.."unlabeled computer "..os.computerID()..".\n"
       end
-      local n=DM({"OK", "Change program exit pause time"}, p)
+      p=p.."Installed in "..system.dir.."\n"
+      local n=DM({"OK", "Change program exit pause time", "Reset SimOS path detector"}, p)
       if n==2 then
-      	print("Current value: "..system.get("endwait"))
         write("New value(in seconds):")
         local val = tonumber(read())
         if not val then
@@ -94,6 +88,11 @@ while true do
           print("Changed the value.")
         end
         sleep(1.3)
+        elseif n==3 then
+          settings.unset("SimOS.location")
+          settings.save(".settings")
+          print("SimOS must be restarted for the change to take effect.")
+          sleep(2)
       else break
       end
     end
