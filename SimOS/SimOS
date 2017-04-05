@@ -8,7 +8,6 @@ if ...=="-safe" then
   print("Safemode active.") 
 end 
 function system.drawMenu(m, pt, n)
-  if not m then return end
   pt=pt or ""
   n=n or 1
   local s,h = term.getSize()
@@ -18,7 +17,7 @@ function system.drawMenu(m, pt, n)
   elseif n>(#m-h+1) then
     s=#m-h+1
   else
-    s=n
+    s=n-h
   end
   while true do
     term.clear()
@@ -43,6 +42,28 @@ function system.drawMenu(m, pt, n)
     elseif key == 28 then return n end
   end 
 end
+
+--Probably not the best name for it...
+if settings.get("SimOS.UEFI") then
+  local drives = {peripheral.find("drive", disk.hasData)}
+  dp = {{"shell exit", ""},{"Run SimOS", "Exit to shell"}}
+  for i=1, #drives do
+    if fs.exists(drives[i].getMountPath().."/startup") then
+      table.insert(dp[1], drives[i].getMountPath().."/startup")
+      if drives[i].getDiskLabel() then
+        table.insert(dp[2], drives[i].getDiskLabel().."(disk ID:"..drives[i].getDiskID()..")")
+      else
+        table.insert(dp[2],"Unlabeled disk (ID:"..drives[i].getDiskID()..")")
+      end
+    end
+  end
+  if #dp[2]>2 then
+    local n = system.drawMenu(dp[2], "Multiple boot devices found. Please select one:\n")
+    if n==2 then return end
+    os.run({["shell"]=shell,["multishell"]=multishell},dp[1][n])
+  end
+end
+
 if settings.get("SimOS.location") then
   system.mainFile = settings.get("SimOS.location")
 else
@@ -108,25 +129,8 @@ if ...~="-api" then
   end
   print("Press F8 or Fn+F8 to pause startup...")
   if parallel.waitForAny(function() system.waitForKey(66) end, function() sleep(3) end)==1 then
-    local n = system.drawMenu({"Continue boot","Start in safemode", "Boot from Disk", "Exit to CraftOS", "Shutdown"}, "Startup paused.\n")
-    if n==3 then
-      local disks = {"Don't boot from disk"}
-      local dp = {"shell exit"}
-      for _,v in pairs({peripheral.find("drive")}) do
-        if v.hasData() and fs.exists(v.getMountPath().."/startup") then
-          table.insert(dp, v.getMountPath().."/startup")
-          if v.getDiskLabel() then
-            table.insert(disks, v.getDiskLabel())
-          else
-            table.insert(disks, "Unlabeled disk with ID "..v.getDiskID())
-          end
-        end
-      end
-      n = system.drawMenu(disks, "Select a disk to boot from:\n")
-      shell.run(dp[n])
-      shell.run(system.mainFile)
-      return
-    elseif n==5 then os.shutdown()
+    local n = system.drawMenu({"Continue boot","Start in safemode", "Exit to CraftOS", "Shutdown"}, "Startup paused.\n")
+    if n==4 then os.shutdown()
     else
       if n == 1 then shell.run(system.mainFile) 
       elseif n==2 then shell.run(system.mainFile, "-safe") end

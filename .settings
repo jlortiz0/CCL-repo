@@ -1,9 +1,11 @@
 {
-  [ "bios.use_multishell" ] = true,
+  [ "SimOS.location" ] = "SimOS/SimOS",
   [ "shell.autocomplete" ] = true,
+  [ "list.show_hidden" ] = true,
+  [ "SimOS.UEFI" ] = true,
   [ "shell.allow_disk_startup" ] = true,
+  [ "bios.use_multishell" ] = true,
   [ "shell.allow_startup" ] = true,
   [ "lua.autocomplete" ] = true,
-  [ "list.show_hidden" ] = true,
   [ "edit.autocomplete" ] = true,
 }

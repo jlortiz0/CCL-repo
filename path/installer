@@ -29,7 +29,7 @@ fin.writeLine("local function unzip(dir, tab) for i=1, #tab do if type(tab[i][2]
 fin.writeLine("local file = fs.open(shell.resolve(\""..tArgs[2]..".jpkg\"), \"r\")")
 fin.writeLine("repeat until file.readLine()==\"return\"")
 fin.writeLine("local tab=textutils.unserialise(file.readAll())")
-fin.writeLine("print(\"Directory to install in:\") write(shell.dir()) unzip(shell.resolve(read())..\"/\", tab) print(\"Done!\"))")
+fin.writeLine("print(\"Directory to install in:\") write(shell.dir()) unzip(shell.resolve(read())..\"/\", tab) print(\"Done!\")")
 fin.writeLine("return")
 fin.write(textutils.serialise(zip(tArgs[1])))
 fin.close()

@@ -1,8 +1,8 @@
 local DM = system.drawMenu
 local n = 1
 while true do
-  n=DM({"Program Remover", "File Manager Settings", "Manage Repos", "System Info and Other", "Exit"}, "Control Panel\n", n)
-  if n==5 then break
+  n=DM({"Program Remover", "File Manager Settings", "Program Store Settings", "System Settings","System Info", "Exit"}, "Control Panel\n", n)
+  if n==6 then break
   elseif n==1 then
     while true do
       local progs = system.get("programs")
@@ -68,17 +68,20 @@ while true do
     end
     system.saveSettings()
     n=4
-  elseif n==4 then
-    while true do
-      p="SimOS version "..system.get("version").."\nRunning on "
+  elseif n==5 then
+      local p="SimOS version "..system.get("version").."\nRunning on "
       if os.computerLabel() then
         p=p..os.computerLabel().." with ID "..os.computerID()..".\n"
       else
         p=p.."unlabeled computer "..os.computerID()..".\n"
       end
       p=p.."Installed in "..system.dir.."\n"
-      local n=DM({"OK", "Change program exit pause time", "Reset SimOS path detector"}, p)
-      if n==2 then
+      DM({"OK"}, p)
+  elseif n==4 then
+    n=1
+    while true do
+      n=DM({"Change program exit pause time", "Reset SimOS path detector", "Toggle SimOS disk booter", "Done"},n)
+      if n==1 then
         write("New value(in seconds):")
         local val = tonumber(read())
         if not val then
@@ -88,11 +91,22 @@ while true do
           print("Changed the value.")
         end
         sleep(1.3)
-        elseif n==3 then
-          settings.unset("SimOS.location")
-          settings.save(".settings")
-          print("SimOS must be restarted for the change to take effect.")
-          sleep(2)
+      elseif n==2 then
+        settings.unset("SimOS.location")
+        settings.save(".settings")
+        print("SimOS must be restarted for the change to take effect.")
+        sleep(2)
+      elseif n==3 then
+        if settings.get("SimOS.UEFI") then
+         settings.unset("SimOS.UEFI")
+         print("Disabled.")
+       else
+         settings.set("SimOS.UEFI", true)
+         print("Enabled.")
+       end
+         settings.save(".settings")
+         print("SimOS must be restarted for the setting to take effect.")
+         sleep(2)
       else break
       end
     end
