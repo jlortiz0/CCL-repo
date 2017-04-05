@@ -1,0 +1,2 @@
+shell.run("/"..system.dir.."/programs/apt update")
+shell.run("/"..system.dir.."/programs/apt upgrade")
