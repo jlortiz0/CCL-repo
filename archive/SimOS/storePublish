@@ -37,7 +37,7 @@ rednet.send(cid, {"getpublished", un}, "SStore")
 --TODO
 elseif n==1 then
 write("Codename of program:")
-local pubmsg = {"publish", un, ps, read())
+local pubmsg = {"publish", un, ps, read()}
 rednet.send(sid, {"info", pubmsg[4]}, "SStore")
 local _, msg = rednet.receive("SStore", 10)
 if msg ~= "nope" then

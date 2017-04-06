@@ -4,7 +4,7 @@ if tArgs[1]=="update" then
   local repos = system.get("apt").repo
   local info = {}
   for i=1, #repos do
-    print("Trying "..repos[i])
+    print("Trying repo "..repos[i])
     rednet.send(repos[i], "update", "SimOSAPT")
     local _, data = rednet.receive("SimOSAPT", 5)
     if type(data)=="table" then

@@ -63,7 +63,7 @@ local function menu(m, pt, n)
   end 
 end
 local n=1
-local stuff = {"SimOS"=true, "logo"=true, "registry"=true, "startup/sysUpgrade"=true, "programs/apt"=true, "programs/fileMgr"=true, "programs/control"=true, "programs/installer"=false, "programs/apt-host"=false}
+local stuff = {["SimOS"]=true, ["logo"]=true, ["registry"]=true, ["startup/sysUpgrade"]=true, ["programs/apt"]=true, ["programs/fileMgr"]=true, ["programs/control"]=true, ["programs/installer"]=false, ["programs/apt-host"]=false}
 local men = {{"APT server host","Done"}, {"programs/apt-host"}}
 while true do
 	n=menu(men[1], "Please select optional components:\n", n)	

@@ -80,7 +80,7 @@ while true do
   elseif n==4 then
     n=1
     while true do
-      n=DM({"Change program exit pause time", "Reset SimOS path detector", "Toggle SimOS disk booter", "Done"},n)
+      n=DM({"Change program exit pause time", "Reset SimOS path detector", "Toggle SimOS disk booter", "Done"}, "", n)
       if n==1 then
         write("New value(in seconds):")
         local val = tonumber(read())

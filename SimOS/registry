@@ -16,6 +16,7 @@
       1,
     },
   },
+  version = 0.8,
   fileMgr = {
     proguf = {
       "Run",
@@ -34,16 +35,10 @@
       "shell exit",
     },
   },
-  version = 0.8,
   apt = {
     repo = {
       1,
     },
-    pkl = {
-      JMail = {
-        1,
-        2.1,
-      },
-    },
+    pkl = {},
   },
 }

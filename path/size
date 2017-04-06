@@ -16,7 +16,7 @@ local function getSize(dir)
 end
 
 local file = getSize(shell.resolve(...))
-write(fs.getName(...).." is ")
+write(fs.getName(shell.resolve(...)).." is ")
 if file<1000 then
   print(file.."B")
 else

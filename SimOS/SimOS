@@ -42,6 +42,18 @@ function system.drawMenu(m, pt, n)
     elseif key == 28 then return n end
   end 
 end
+function system.writeCenter(text)
+  local w = term.getSize()
+  if #text>w then
+    system.writeCenter(string.sub(text, 1, #text/2))
+    print()
+    system.writeCenter(string.sub(text, (#text/2)-1))
+  else
+    local _, h = term.getCursorPos()
+    term.setCursorPos((w/2)-(#text/2), h)
+    write(text)
+  end
+end
 
 --Probably not the best name for it...
 if settings.get("SimOS.UEFI") then
@@ -114,7 +126,8 @@ if ...~="-api" then
       paintutils.drawImage(h, 2, 2)
       term.setBackgroundColor(0x8000)
       term.setTextColor(1)
-      print("\n                  by jlortiz\n")
+      print()
+      system.writeCenter("by jlortiz\n\n")
     end
   elseif not ... then
   	local h = paintutils.loadImage(system.dir.."/logo")
@@ -124,7 +137,8 @@ if ...~="-api" then
   	  paintutils.drawImage(h, 2, i)
   	  term.setBackgroundColor(0x8000)
       term.setTextColor(1)
-      print("\n                  by jlortiz\n")
+	  print()
+      system.writeCenter("by jlortiz\n\n")
   	end
   end
   print("Press F8 or Fn+F8 to pause startup...")
@@ -156,9 +170,11 @@ function system.saveSettings()
   h.close()
 end
 
-if fs.isDir(system.dir.."/startup") and not system.safemode then
-  for _,v in pairs(fs.list(system.dir.."/startup/")) do
-    shell.run("/"..system.dir.."/startup/"..v)
+if not system.safemode then
+  term.clear()
+  term.setCursorPos(1,1)
+  for _,v in pairs(fs.list(system.dir.."/startup/startup/")) do
+    shell.run("/"..system.dir.."/startup/startup/"..v)
   end
 end
 if ...=="-api" or system.safemode=="exit" then return end
@@ -171,7 +187,20 @@ while true do
     table.insert(active, progs[i][1])
   end
   table.insert(active, "Exit")
-  n = system.drawMenu(active, "Welcome to SimOS.\nIt is "..textutils.formatTime(os.time(), system.get("24hr")).." on day "..os.day()..".\n", n)
+  parallel.waitForAny(function()
+    local timer=os.startTimer(60)
+    while true do
+      local event, data = os.pullEvent()
+      if event=="timer" and data==timer then
+        os.run({["system"]=system}, system.dir.."/programs/fire")
+      elseif event=="key" or event=="mouse_click"  or event=="monitor_touch" then
+        os.cancelTimer(timer)
+        timer = os.startTimer(60)
+      end
+    end
+  end, function()
+    n = system.drawMenu(active, "Welcome to SimOS.\nIt is "..textutils.formatTime(os.time(), system.get("24hr")).." on day "..os.day()..".\n", n)
+  end)
   if n == #active then
     n=system.drawMenu({"Cancel", "Exit to CraftOS", "Reboot", "Shutdown"}, "Shutdown Menu:\n")
     if n==4 then os.shutdown()
