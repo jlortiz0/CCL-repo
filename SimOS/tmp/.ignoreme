@@ -1,0 +1,3 @@
+This directory is used to implement io.tmpfile.
+Anything in this directory will be deleted when SimOS starts.
+This file is here to make sure Git syncs the folder.

@@ -101,6 +101,48 @@ if not fs.exists(system.dir.."/programs/fileMgr") then
   return
 end
 
+fs.delete(system.dir.."/tmp")
+local h = fs.open(system.dir.."/tmp/.ignoreme", "w")
+h.write("This directory is used to implement io.tmpfile.\nAnything in this directory will be deleted when SimOS starts.\nThis file is here to make sure Git syncs the folder.")
+h.close()
+function io.tmpfile(name, del)
+  name = name or ""
+  local i = 0
+  repeat
+    i=i+1
+  until not fs.exists(system.dir.."/tmp/"..name.."temp"..i)
+  local file = fs.open(system.dir.."/tmp/"..name.."temp"..i, "w")
+  if not del then
+    local oldclose = file.close
+    file.close = function()
+      oldclose()
+      fs.delete(system.dir.."/tmp/"..name.."temp"..i)
+    end
+  end 
+  return file, (system.dir.."/tmp/"..name.."temp"..i) 
+end
+
+function bit.tobits(num)
+  local tab, new = {}
+  for i=0, 31 do
+    new = bit.blshift(num, i)
+    table.insert(tab, bit.blogic_rshift(new, 31))
+  end
+  while tab[1]==0 do
+    table.remove(tab,1)
+  end
+  return tab
+end
+function bit.tonum(bits)
+  local num = 0
+  for i=1, #bits do
+    if bits[i]==1 then
+      num = num + 2^(#bits-i)
+    end
+  end
+  return num
+end
+
 function system.waitForKey(n)
   while true do
     local _,key = os.pullEvent("key")
@@ -137,7 +179,6 @@ if ...~="-api" then
   	  paintutils.drawImage(h, 2, i)
   	  term.setBackgroundColor(0x8000)
       term.setTextColor(1)
-	  print()
       system.writeCenter("by jlortiz\n\n")
   	end
   end
@@ -154,7 +195,7 @@ if ...~="-api" then
 else system.safemode = true
 end
 
-local h = fs.open(system.dir.."/registry", "r")
+h = fs.open(system.dir.."/registry", "r")
 local registry = textutils.unserialise(h.readAll())
 h.close()
 local pass = registry.apass
@@ -179,40 +220,46 @@ if not system.safemode then
 end
 if ...=="-api" or system.safemode=="exit" then return end
 
-local n=1
-while true do
-  local progs = system.get("programs")
-  local active = {}
-  for i=1,#progs do
-    table.insert(active, progs[i][1])
-  end
-  table.insert(active, "Exit")
-  parallel.waitForAny(function()
-    local timer=os.startTimer(60)
-    while true do
-      local event, data = os.pullEvent()
-      if event=="timer" and data==timer then
-        os.run({["system"]=system}, system.dir.."/programs/fire")
-      elseif event=="key" or event=="mouse_click"  or event=="monitor_touch" then
-        os.cancelTimer(timer)
-        timer = os.startTimer(60)
-      end
+local function main()
+  local n=1
+  while true do
+    local progs = system.get("programs")
+    local active = {}
+    for i=1,#progs do
+      table.insert(active, progs[i][1])
     end
-  end, function()
-    n = system.drawMenu(active, "Welcome to SimOS.\nIt is "..textutils.formatTime(os.time(), system.get("24hr")).." on day "..os.day()..".\n", n)
-  end)
-  if n == #active then
-    n=system.drawMenu({"Cancel", "Exit to CraftOS", "Reboot", "Shutdown"}, "Shutdown Menu:\n")
-    if n==4 then os.shutdown()
-    elseif n==3 then os.reboot()
-    elseif n==2 then return end
-  else
-    term.clear()
-    term.setCursorPos(1,1)
-    local dir = shell.dir()
-    shell.setDir(system.dir.."/programs/")
-    shell.run(progs[n][2])
-    shell.setDir(dir)
-    sleep(system.get("endwait"))
-  end 
+    table.insert(active, "Exit")
+    parallel.waitForAny(function()
+      local timer=os.startTimer(60)
+      while true do
+        local event, data = os.pullEvent()
+        if event=="timer" and data==timer then
+          os.run({["system"]=system}, system.dir.."/programs/fire")
+        elseif event=="key" or event=="mouse_click"  or event=="monitor_touch" then
+          os.cancelTimer(timer)
+          timer = os.startTimer(60)
+        end
+      end
+    end, function()
+      n = system.drawMenu(active, "Welcome to SimOS.\nIt is "..textutils.formatTime(os.time(), system.get("24hr")).." on day "..os.day()..".\n", n)
+    end)
+    if n == #active then
+      n=system.drawMenu({"Cancel", "Exit to CraftOS", "Reboot", "Shutdown"}, "Shutdown Menu:\n")
+      if n==4 then os.shutdown()
+      elseif n==3 then os.reboot()
+      elseif n==2 then return end
+    else
+      term.clear()
+      term.setCursorPos(1,1)
+      local dir = shell.dir()
+      shell.setDir(system.dir.."/programs/")
+      shell.run(progs[n][2])
+      shell.setDir(dir)
+      sleep(system.get("endwait"))
+    end 
+  end
+end
+local ok, error = pcall(main)
+if not ok then
+  printError(error)
 end
