@@ -101,6 +101,23 @@ if not fs.exists(system.dir.."/programs/fileMgr") then
   return
 end
 
+if ...~="-api" then
+  local lines = {}
+  for l in io.lines(system.dir.."/SimOS.log") do
+    table.insert(lines, l)
+  end
+  while #lines>512 do
+    table.remove(lines, 1)
+  end
+  local log = fs.open(system.dir.."/SimOS.log", "w")
+  log.writeLine(table.concat(lines, "\n").."\n--BREAK--")
+  function system.log(event)
+    log.writeLine("["..os.clock().."]"..tostring(event))
+    log.flush()
+  end
+  system.log("SimOS started in "..system.dir.." on "..os.day().." at "..textutils.formatTime(os.time()))
+end
+
 fs.delete(system.dir.."/tmp")
 local h = fs.open(system.dir.."/tmp/.ignoreme", "w")
 h.write("This directory is used to implement io.tmpfile.\nAnything in this directory will be deleted when SimOS starts.\nThis file is here to make sure Git syncs the folder.")
@@ -149,6 +166,7 @@ function system.waitForKey(n)
     if key==n then return end 
   end 
 end
+if system.safemode then system.log("Running in safemode.") end
 
 if ...~="-api" then
   if term.isColor() and not ... then
@@ -182,8 +200,10 @@ if ...~="-api" then
       system.writeCenter("by jlortiz\n\n")
   	end
   end
+  system.log("Played logo animation.")
   print("Press F8 or Fn+F8 to pause startup...")
   if parallel.waitForAny(function() system.waitForKey(66) end, function() sleep(3) end)==1 then
+    system.log("User entered advanced startup menu.")
     local n = system.drawMenu({"Continue boot","Start in safemode", "Exit to CraftOS", "Shutdown"}, "Startup paused.\n")
     if n==4 then os.shutdown()
     else
@@ -209,13 +229,16 @@ function system.saveSettings()
   local h = fs.open(system.dir.."/registry", "w")
   h.write(textutils.serialise(registry))
   h.close()
+  system.log("Saved registry.")
 end
 
 if not system.safemode then
   term.clear()
   term.setCursorPos(1,1)
-  for _,v in pairs(fs.list(system.dir.."/startup/startup/")) do
-    shell.run("/"..system.dir.."/startup/startup/"..v)
+  for _,v in pairs(fs.list(system.dir.."/startup/")) do
+    if not shell.run("/"..system.dir.."/startup/"..v) then
+      system.log("Startup script error! File: "..system.dir.."/startup/"..v)
+    end
   end
 end
 if ...=="-api" or system.safemode=="exit" then return end
@@ -234,7 +257,8 @@ local function main()
       while true do
         local event, data = os.pullEvent()
         if event=="timer" and data==timer then
-          os.run({["system"]=system}, system.dir.."/programs/fire")
+          system.log("Starting screensaver.")
+          os.run({}, system.dir.."/programs/screensaver")
         elseif event=="key" or event=="mouse_click"  or event=="monitor_touch" then
           os.cancelTimer(timer)
           timer = os.startTimer(60)
@@ -244,22 +268,26 @@ local function main()
       n = system.drawMenu(active, "Welcome to SimOS.\nIt is "..textutils.formatTime(os.time(), system.get("24hr")).." on day "..os.day()..".\n", n)
     end)
     if n == #active then
-      n=system.drawMenu({"Cancel", "Exit to CraftOS", "Reboot", "Shutdown"}, "Shutdown Menu:\n")
+      system.log("User entered shutdown menu.")
+      local n=system.drawMenu({"Cancel", "Exit to CraftOS", "Reboot", "Shutdown"}, "Shutdown Menu:\n")
       if n==4 then os.shutdown()
       elseif n==3 then os.reboot()
       elseif n==2 then return end
     else
+      system.log("User running "..progs[n][2])
       term.clear()
       term.setCursorPos(1,1)
       local dir = shell.dir()
       shell.setDir(system.dir.."/programs/")
       shell.run(progs[n][2])
       shell.setDir(dir)
+      system.log("Returning to SimOS main menu...")
       sleep(system.get("endwait"))
     end 
   end
 end
 local ok, error = pcall(main)
 if not ok then
-  printError(error)
+  system.log("Fatal SimOS error! "..error)
+  system.drawMenu({"OK"}, "Sorry, but SimOS has encountered an error and must close.\nThe error is as follows:\n"..error)
 end

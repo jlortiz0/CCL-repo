@@ -94,14 +94,17 @@ while true do
       elseif n==2 then
         settings.unset("SimOS.location")
         settings.save(".settings")
+        system.log("Cleared SimOS location memory.")
         print("SimOS must be restarted for the change to take effect.")
         sleep(2)
       elseif n==3 then
         if settings.get("SimOS.UEFI") then
          settings.unset("SimOS.UEFI")
+         system.log("Disabled SimOS UEFI.")
          print("Disabled.")
        else
          settings.set("SimOS.UEFI", true)
+         system.log("Enabled SimOS UEFI.")
          print("Enabled.")
        end
          settings.save(".settings")

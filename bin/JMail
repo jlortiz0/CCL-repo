@@ -27,6 +27,7 @@ rednet.send(sid, "HELO", "JMail")
 local id, msg = rednet.receive("JMail", 10)
 if sid ~= id or msg ~= "OK connect" then
   printError("Could not connect.")
+  if type(msg)=="string" then printError("Server error: "..msg) end
   return
 end
 local getMsg = function()
@@ -96,7 +97,7 @@ while true do
             else
               thing = true
             end
-            if thing==true then
+            if thing==true and type(msg[2])=="number" then
               write("Subject:")
               table.insert(msg, read())
               table.insert(msg, "")
@@ -105,11 +106,13 @@ while true do
               for i=1, 10 do
                 local txt=read()
                 if txt=="END" then break end
-                msg[5]=msg[5]..txt.."\n"
+                msg[5]=(msg[5] or "")..txt.."\n"
               end
               print("Sending message...")
               rednet.send(sid, msg, "JMail")
               print(getMsg())
+            elseif type(msg[2])~="number" then
+              print("Not a valid server ID.")
             else
               print("No such user.")
             end

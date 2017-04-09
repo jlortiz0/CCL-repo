@@ -8,9 +8,10 @@ local set = {
   allownewuser=true,
   sendmailremote=true,
   getmailremote=true,
-  --The below should be kept as true
+  --The below is used internally and should be kept as true
   run=true,
 }
+local connected = {}
 
 local function connect(cid)
   local function getMsg()
@@ -23,10 +24,11 @@ local function connect(cid)
     local msg = getMsg()
     if msg=="QUIT" then
       if set.verbose then print(cid.." disconnected") end
+      connected[cid]=nil
       return
     elseif msg=="REGA" then rednet.send(cid, set.allownewuser, "JMail")
     elseif type(msg)=="table" then
-      if msg[1]=="VRFY" and type(msg[2])=="string" then rednet.send(cid, fs.exists("/users/"..msg[2]) and msg[2]~="", "JMail")
+      if msg[1]=="VRFY" and type(msg[2])=="string" then rednet.send(cid, fs.isDir("/users/"..msg[2]) and msg[2]~="", "JMail")
       elseif msg[1]=="REG" and set.allownewuser then
         if not fs.exists("/users/"..msg[2]) then
           fs.makeDir("/users/"..msg[2].."/mail")
@@ -49,6 +51,7 @@ local function connect(cid)
             local msg = getMsg()
             if msg=="QUIT" then 
               if set.verbose then print(cid.." disconnected") end
+              connected[cid]=nil
               return
             elseif type(msg)=="table" then
                 if msg[1]=="GET" and type(msg[2])=="string" then
@@ -81,7 +84,7 @@ local function connect(cid)
                   end
                   f.close()
                 elseif msg[1]=="VRFY" and type(msg[2])=="string" then
-                  rednet.send(cid, fs.exists("/users/"..msg[2]) and msg[2]~="", "JMail")
+                  rednet.send(cid, fs.isDir("/users/"..msg[2]) and msg[2]~="", "JMail")
                 elseif msg[1]=="DATA" and pcall(function() table.concat(msg, " ") end) then
                   if msg[2]==os.getComputerID() and set.sendmailremote then
                     if fs.exists("/users/"..msg[3]) and msg[3]~="" then
@@ -128,9 +131,13 @@ local function connector(n)
     if n and not set.run then return end
     local id, msg = rednet.receive("JMail")
     if msg=="HELO" then
-      if set.run then
+      if connected[id] then
+        if set.verbose then print(id.." is already connected.") end
+        rednet.send(id, "Already connected", "JMail")
+      elseif set.run then
         rednet.send(id, "OK connect", "JMail")
         if set.verbose then print(id.." has connected") end
+        connected[id]=true
         parallel.waitForAny(connector, function() local ok, err = pcall(function() connect(id) end); if not ok then printError(err) end end)
         if n then connector(true) end
         return
@@ -162,16 +169,17 @@ local function connector(n)
 end
 
 local function console()
-  local locked = true
+  local locked, dir, hist = (true and set.adminpass), "/", {}
   while true do
-    if locked and set.adminpass then
+    if locked then
       write("Password:")
       if read("*")==set.adminpass then
         locked=false
       end
     else
-      write("mail>")
-      local cmd = read()
+      write("mail"..dir..">")
+      local cmd = read(nil, hist)
+      table.insert(hist, cmd)
       if cmd=="lock" and set.adminpass then
         locked=true
         term.clear()
@@ -182,23 +190,30 @@ local function console()
         print("Waiting for current clients to disconnect...")
         os.queueEvent("rednet_message", os.getComputerID(), "HELO", "JMail")
         return
+      elseif cmd=="ls" or cmd=="list" or cmd=="dir" then
+        shell.run("list", "/users/"..dir)
+      elseif cmd=="connected" then
+        for k in pairs(connected) do
+          write(k.." ")
+        end
+        print()
       else
         local tcmd = {}
         for k in string.gmatch(cmd, "[^ \t]+") do
           table.insert(tcmd, k)
         end
-        if tcmd[1]=="dc" then
+        if tcmd[1]=="dc" and tcmd[2] then
           os.queueEvent("rednet_message", tonumber(tcmd[2]), "QUIT", "JMail")
-        elseif tcmd[1]=="cps" then
-          if fs.isDir("/users/"..tcmd[2]) then
-            local f = fs.open("/users/"..tcmd[2].."/pass", "w")
-            f.write(tcmd[3])
-            f.close()
-            print("Done.")
+        elseif tcmd[1]=="cd" and tcmd[2] then
+          if fs.isDir(fs.combine(dir, tcmd[2])) then
+            dir = "/"..fs.combine(dir, tcmd[2])
+          else
+            printError("Not a directory.")
           end
-        elseif tcmd[1]=="acps" and (tcmd[2]==set.adminpass or set.adminpass==nil) then
-          set.adminpass=tcmd[3]
-          print("Success.")
+        elseif (tcmd[1]=="rm" or tcmd[1]=="delete") and tcmd[2] then
+          fs.delete("/users/"..fs.combine(dir, tcmd[2]))
+        elseif tcmd[1]=="edit" and tcmd[2] then
+          shell.run("edit", "/users/"..fs.combine(dir, tcmd[2]))
         else
           printError("Unknown command.")
         end

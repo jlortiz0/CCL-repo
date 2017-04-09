@@ -38,9 +38,9 @@ end
 local numDithers=(#dithers*2-1)
 local max_bright=#ranges*numDithers
 term.clear()
-term.setCursorPos(1,1)
-system.writeCenter("Fire by GopherATL")
-old = term.redirect(window.create(term.current(), 1, 2, w, h-1))
+term.setCursorPos(11, 1)
+write("Screensaver: Fire by GopherATL")
+local old = term.redirect(window.create(term.current(), 1, 2, w, h-1))
 
 function genShaded(brightness)
   --break into color group
@@ -78,7 +78,7 @@ for i=0,max_bright do
   precalc_shade[i]={genShaded(i)}
 end
 
-dither=system.get("fireDither")
+local dither=true
 
 function drawShaded(bright)
   bright=math.floor(bright+.5)
