@@ -6,33 +6,40 @@ local function contains(tab, thing)
 end
 
 local function menu(m, p, n, k)
+pt=pt or ""
   n=n or 1
-  p=p or ""
   k=k or {28}
   local s,h = term.getSize()
   h=h-5
+  if n<h then
+    s=1
+  elseif n>(#m-h+1) then
+    s=#m-h+1
+  else
+    s=n-h
+  end
   while true do
-    if n<h/2 then
-      s=1
-    elseif n>#m-h+1 then
-      s=#m-h+1
-    else
-      s=n
-    end
     term.clear()
     term.setCursorPos(1,1)
-    print(p)
-    for i=s, s+h do
-      if i==n  then print("-> ["..m[i].."]")
-      else print(m[i]) end
+    print(pt)
+    for i=s,s+h do
+      if i==n then 
+        print("-> ["..m[i].."]")
+      else 
+        print(m[i])
+      end 
       if #m==i then break end
     end
     print("Use arrow keys and enter to select")
     local _,key = os.pullEvent("key")
-    if key==200 then if n>1 then n=n-1 end
-    elseif key==208 then if n<#m then n=n+1 end
+    if key == 200 and n>1 then 
+      n=n-1
+      if n<s then s=s-1 end
+    elseif key == 208 and n<#m then 
+      n=n+1
+      if s<#m-h+1 and n>s+h then s=s+1 end
     elseif contains(k, key) then return n, key end
-  end
+  end 
 end
 
 local function clear()
