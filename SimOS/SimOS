@@ -7,9 +7,16 @@ if ...=="-safe" then
   system.safemode=true
   print("Safemode active.") 
 end 
-function system.drawMenu(m, pt, n)
+
+table.indexOf = function(tab, key)
+  for k, v in pairs(tab) do
+    if v==key then return k end
+  end
+end
+function system.drawMenu(m, pt, n, k)
   pt=pt or ""
   n=n or 1
+  k=k or {28}
   local s,h = term.getSize()
   h=h-5
   if n<h then
@@ -39,7 +46,7 @@ function system.drawMenu(m, pt, n)
     elseif key == 208 and n<#m then 
       n=n+1
       if s<#m-h+1 and n>s+h then s=s+1 end
-    elseif key == 28 then return n end
+    elseif table.indexOf(k, key) then return n, key end
   end 
 end
 function system.writeCenter(text)
