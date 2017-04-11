@@ -18,7 +18,7 @@ function system.drawMenu(m, pt, n, k)
   n=n or 1
   k=k or {28}
   local s,h = term.getSize()
-  h=h-5
+  h=h-2-print(pt)
   if n<h then
     s=1
   elseif n>(#m-h+1) then
@@ -38,7 +38,6 @@ function system.drawMenu(m, pt, n, k)
       end 
       if #m==i then break end
     end
-    print("Use arrow keys and enter to select")
     local _,key = os.pullEvent("key")
     if key == 200 and n>1 then 
       n=n-1
