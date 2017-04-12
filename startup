@@ -1,8 +1,26 @@
---Any errors from line 1 are considered fatal, so we can't have code there
 rednet.open("top")
 shell.setAlias("del", "delete")
+shell.setAlias("halt", "shutdown")
 shell.setPath(shell.path()..":/path")
 for _,v in pairs(fs.list("/apis/")) do
 local h = os.loadAPI("/apis/"..v)
 if not h then printError("Api "..v.." failed to load!") end
 end
+
+--Setup some completions
+local function completeFile(s, i, t)
+  if i==1 then
+    return fs.complete(s.dir(), t, true, false)
+  end
+end
+local function completeDir(s, i, t)
+  if i==1 then
+    return fs.complete(s.dir(), t, false, true) 
+  end
+end
+
+shell.setCompletionFunction("path/ide", completeFile)
+shell.setCompletionFunction("path/cat", completeFile)
+shell.setCompletionFunction("path/size", completeDir)
+shell.setCompletionFunction("path/zip", completeDir)
+shell.setCompletionFunction("path/unzip", completeFile)

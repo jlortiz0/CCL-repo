@@ -19,6 +19,19 @@ if ... then
     else break end
   end
   table.insert(stuff, ver)
+  while true do
+    print("[1] Program\n[2] Startup Script")
+    local ans = read()
+    if ans=="1" then
+      table.insert(stuff, "prog")
+      break
+    elseif ans=="2" then
+      table.insert(stuff, "start")
+      break
+    else
+      print("Try again.")
+    end
+  end
   local h = fs.open(args, "r")
   table.insert(stuff, h.readAll())
   h.close()

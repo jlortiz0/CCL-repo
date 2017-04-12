@@ -16,13 +16,12 @@
       1,
     },
   },
-  version = 0.8,
+  version = 0.85,
   fileMgr = {
     proguf = {
       "Run",
       "Edit",
       "Add as program",
-      "Delete",
       "Lua IDE",
       "Cancel",
     },
@@ -30,7 +29,6 @@
       "$PATH",
       "edit $PATH",
       "$ADDPROG",
-      "rm $PATH",
       "/path/ide $PATH",
       "shell exit",
     },

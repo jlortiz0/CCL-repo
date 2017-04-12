@@ -58,7 +58,7 @@ elseif tArgs[1]=="install" and tArgs[2] then
     print("Server did not reply, try again or ask an admin.")
   elseif data=="nope" then
     print("Server could not find package, try running apt update.")
-  elseif type(data[6])=="string" then
+  elseif type(data[6])=="string" and data[7]=="prog" then
       local f = fs.open(system.dir.."/programs/"..tArgs[2], "w")
       f.write(data[6])
       f.close()
@@ -66,7 +66,12 @@ elseif tArgs[1]=="install" and tArgs[2] then
       tArgs[4]=tonumber(tArgs[4])
       progs[tArgs[4]]=data
       table.remove(progs[tArgs[4]])
+      table.remove(profs[tArgs[4]])
       system.set("programs", progs)
+  elseif data[7]=="start" then
+    local f = fs.open(system.dir.."/startup/"..tArgs[2], "w")
+    f.write(data[6])
+    f.close()
   else
       print("Multifile support not implemented.")
       return

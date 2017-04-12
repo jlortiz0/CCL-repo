@@ -88,11 +88,11 @@ else
   local locs = fs.find("*/SimOS")
   if #locs > 1 then
     system.mainFile = locs[system.drawMenu(locs, "Please select the folder where SimOS is installed:")]
-    settings.set("SimOS.location", system.mainFile)
-    settings.save(".settings")
   else
     system.mainFile=locs[1]
   end
+  settings.set("SimOS.location", system.mainFile)
+  settings.save(".settings")
 end
 system.mainFile = "/"..system.mainFile
 system.dir = "/"..fs.combine(system.mainFile, "..")

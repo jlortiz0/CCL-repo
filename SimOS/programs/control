@@ -27,8 +27,8 @@ while true do
       local tmp = {table.unpack(set.proguf)}
       table.insert(tmp, "New..")
       table.insert(tmp, "Exit")
-      n=DM(tmp, "Select an option to remove it:\n")
-      if n<5 or n==#set.proguf then
+      n=DM(tmp, "Select an option to remove it:\n", n)
+      if n<4 or n==#set.proguf then
         print("Cannot remove that option.")
         sleep(1)
       elseif n<#set.proguf then

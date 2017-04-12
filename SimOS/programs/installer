@@ -1,8 +1,8 @@
-if (fs.find("*SimOS/SimOS")[1] or fs.find("*/SimOS/SimOS")[1]) then
+if settings.get("SimOS.location") then
   print("SimOS already installed, do you want to try to upgrade it?(y/n)")
   local _, key = os.pullEvent("key")
   if key~=keys.y then return end
-  shell.run("/"..(fs.find("*SimOS/startup/.sysUpgrade")[1] or fs.find("*/SimOS/startup/sysUpgrade")[1]), "-verbose")
+  shell.run("/"..settings.get("SimOS.location").."/../startup/.sysUpgrade -verbose")
   return
 end
 
@@ -12,6 +12,7 @@ if not http then
 end
 if parallel.waitForAny(function() sleep(4) end, function() if not http.get("http://raw.githubusercontent.com/jlortiz0/CCL-repo/master/SimOS/logo") then sleep(5) end end)==1 then
   print("Could not contact GitHub, are you connected to the Internet?")
+  return
 end
 local function getObject(file)
   write("Getting SimOS/"..file.."...")
@@ -83,6 +84,7 @@ for k,v in pairs(stuff) do
 	if v then getObject(k) end
 end
 fs.open("/SimOS/SimOS.log", "a").close()
+fs.open("/SimOS/tmp/.ignoreme", "a").close()
 print("Run SimOS now? (y/n)")
 _, key = os.pullEvent("key")
 if key~=keys.y then return end

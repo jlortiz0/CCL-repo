@@ -11,7 +11,7 @@ local set = system.get("fileMgr")
 if tArgs[1]=="-select" then
   set.proguf={"Select this file", "Edit", "Cancel"}
 end
-local n = 1
+local n, key = 1
 while true do
   local fl = fs.list(path)
   local fc = 0
@@ -28,11 +28,11 @@ while true do
   end
   if not fs.isReadOnly(path) then table.insert(fl, "New...") end
   table.insert(fl, "Exit")
-  n = system.drawMenu(fl, "Directory of "..path..":\n", n)
+  n, key = system.drawMenu(fl, "Directory of "..path..":\n", n, {28, 211, 60})
   if n==#fl then 
     return nil
   elseif n==#fl-1 and not fs.isReadOnly(path) then
-    n = system.drawMenu({"New file","New folder", "Cancel"}, "Create new in directory "..path..":\n")
+    local n = system.drawMenu({"New file","New folder", "Cancel"}, "Create new in directory "..path..":\n")
     if n==2 then
       write("Folder Name:")
       local input = read()
@@ -53,7 +53,15 @@ while true do
       end
     end
   else
-    if fs.isDir(fs.combine(path,fl[n])) then
+    if key==211 and not fs.isReadOnly(path) then
+      fs.delete(fs.combine(path, fl[n]))
+    elseif key==60 and not fs.isReadOnly(path) then
+      print("Rename "..fl[n].." to:")
+      if not pcall(function() fs.move(fs.combine(path, fl[n]), fs.combine(path, read())) end) then
+        printError("There is already a file by that name.")
+        sleep(1.3)
+      end
+    elseif fs.isDir(fs.combine(path,fl[n])) then
       path = fs.combine(path, fl[n])
       n=1
     else 
