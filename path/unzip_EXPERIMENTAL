@@ -1,0 +1,61 @@
+print("JZip Unzipping tool")
+if not ... then
+  printError("Usage: JUnzip <.zip file>")
+  return 
+end
+local file = shell.resolve(...)
+if not fs.exists(file) or fs.isDir(file) then
+  printError("No such file")
+  return
+end
+
+local f = fs.open(file, "r")
+f.readLine()
+f.readLine()
+local fat = textutils.unserialise(f.readAll())
+f.close()
+if type(fat) ~= "table" or table.remove(fat, 1)~="JZip" then
+  printError("Not a JZip file.")
+  return 
+end
+
+print("Please enter directory to unzip to:")
+write(shell.dir().."/")
+local path = shell.resolve(read().."/")
+
+local function unzip(dir, tab)
+  for k,v in pairs(tab) do
+	if type(v) == "table" then
+	  fs.makeDir(fs.combine(dir, k))
+	  unzip(fs.combine(dir, k), v)
+	else
+	  local fi = fs.open(fs.combine(dir, k), "w")
+	  fi.writeLine(v)
+	  fi.close()
+	end 
+  end 
+end
+
+local function decompress(tab, comp)
+  for k, v in pairs(tab) do
+  	if type(v)=="table" then
+  	  tab[k]=decompress(v, comp)
+  	else
+  	  for nk, nv in ipairs(comp) do
+  	  	v=v:gsub("`"..string.char(nk+36)..(function() if nk==1 then return "%" else return "" end end)(), nv)
+  	  end
+  	  tab[k]=v
+  	end
+  end
+end
+
+local mil = table.remove(fat, 1)
+for i=1, #mil do
+  mil[i]=string.gsub(mil[i], "%%%[", "%[")
+  mil[i]=string.gsub(mil[i], "%%%]", "%]")
+  mil[i]=string.gsub(mil[i], "%%%.", "%.")
+  mil[i]=string.gsub(mil[i], "%%%^", "%^")
+  mil[i]=string.gsub(mil[i], "%%%%", "%%")
+end
+unzip(path, decompress(fat, mil))
+print("Unzipping complete")
