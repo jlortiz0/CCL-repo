@@ -40,7 +40,7 @@ local function compress1(tab)
 end
 print("Running compression...")
 compress1(tab)
-tdos, k = {}, nil
+tdos, k, v = {}, nil
 while true do
   k=next(times, k)
   if k==nil then break end
@@ -53,13 +53,20 @@ while #tdos>95 do
   table.remove(tdos)
 end
 table.sort(tdos)
+for i=1, #tdos do
+	tdos[i]=string.gsub(tdos[i], "%%", "%%%%")
+	tdos[i]=string.gsub(tdos[i], "%[", "%%[")
+	tdos[i]=string.gsub(tdos[i], "%]", "%%]")
+	tdos[i]=string.gsub(tdos[i], "%.", "%%.")
+	tdos[i]=string.gsub(tdos[i], "%^", "%%^")
+end
 local function compress2(tab)
   for k, v in pairs(tab) do
     if type(v)=="table" then
       tab[k]=compress2(v)
     else
       for nk,nv in ipairs(tdos) do
-        pcall(function() v = v:gsub(nv, "`"..string.char(nk+0x20)) end)
+        v = v:gsub(nv, "`"..string.char(nk+36))
       end
       tab[k]=v
     end
