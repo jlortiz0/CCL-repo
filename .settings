@@ -1,5 +1,4 @@
 {
-  [ "SimOS.location" ] = "SimOS/SimOS",
   [ "shell.autocomplete" ] = true,
   [ "list.show_hidden" ] = true,
   [ "SimOS.UEFI" ] = true,

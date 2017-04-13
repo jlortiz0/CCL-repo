@@ -78,34 +78,12 @@ if settings.get("SimOS.UEFI") then
   if #dp[2]>2 then
     local n = system.drawMenu(dp[2], "Multiple boot devices found. Please select one:\n")
     if n==2 then return end
-    os.run({["shell"]=shell,["multishell"]=multishell},dp[1][n])
+    os.run({["shell"]=shell,["multishell"]=multishell}, dp[1][n]) 
   end
 end
 
-if settings.get("SimOS.location") then
-  system.mainFile = settings.get("SimOS.location")
-else
-  local locs = fs.find("*/SimOS")
-  if #locs > 1 then
-    system.mainFile = locs[system.drawMenu(locs, "Please select the folder where SimOS is installed:")]
-  else
-    system.mainFile=locs[1]
-  end
-  settings.set("SimOS.location", system.mainFile)
-  settings.save(".settings")
-end
-system.mainFile = "/"..system.mainFile
+system.mainFile = "/"..shell.getRunningProgram()
 system.dir = "/"..fs.combine(system.mainFile, "..")
-if not fs.exists(system.dir.."/programs/fileMgr") then
-  settings.unset("SimOS.location")
-  settings.save(".settings")
-  print("There was an error loading SimOS from the specified location.")
-  print("SimOS will correct this error when it is restarted.")
-  print("Press any key to continue...")
-  sleep(1)
-  os.pullEvent("key")
-  return
-end
 
 if ...~="-api" then
   local lines = {}

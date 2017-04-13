@@ -10,12 +10,12 @@ end
 --Setup some completions
 local function completeFile(s, i, t)
   if i==1 then
-    return fs.complete(s.dir(), t, true, false)
+    return fs.complete(t, s.dir(), true, false)
   end
 end
 local function completeDir(s, i, t)
   if i==1 then
-    return fs.complete(s.dir(), t, false, true) 
+    return fs.complete(t, s.dir(), false, true) 
   end
 end
 
