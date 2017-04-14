@@ -36,7 +36,7 @@ elseif tArgs[1]=="install" and tArgs[2] then
   if not pkls[tArgs[2]] then
     print("Could not find package, try apt update.")
     return
-  elseif (not tArgs[3]) or tArgs[3]~="-upgrade" then
+  elseif ((not tArgs[3]) or tArgs[3]~="-upgrade") and #pkls[tArgs[2]]==4 then
     local progs = system.get("programs")
     for i=1, #progs do
       if progs[i][4]==tArgs[2] then
@@ -58,7 +58,7 @@ elseif tArgs[1]=="install" and tArgs[2] then
     print("Server did not reply, try again or ask an admin.")
   elseif data=="nope" then
     print("Server could not find package, try running apt update.")
-  elseif type(data[6])=="string" and data[7]=="prog" then
+  elseif #data==7 and type(data[6])=="string" then
       local f = fs.open(system.dir.."/programs/"..tArgs[2], "w")
       f.write(data[6])
       f.close()
@@ -68,10 +68,11 @@ elseif tArgs[1]=="install" and tArgs[2] then
       table.remove(progs[tArgs[4]])
       table.remove(profs[tArgs[4]])
       system.set("programs", progs)
-  elseif data[7]=="start" then
+  elseif #data==2 then
     local f = fs.open(system.dir.."/startup/"..tArgs[2], "w")
     f.write(data[6])
     f.close()
+	tArgs[5]="Donut Save"
   else
       print("Multifile support not implemented.")
       return
@@ -138,7 +139,6 @@ else
   print("apt remove <package> - Removes an installed package.")
   print("apt rmrepo <id> - Removes an apt repository.")
   print("apt help - Take a guess.")
-  print("This APT has cat powers.")
 end
 
 if tArgs[5]~="Donut Save" then
