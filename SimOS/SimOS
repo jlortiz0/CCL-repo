@@ -63,16 +63,14 @@ end
 
 --Probably not the best name for it...
 if settings.get("SimOS.UEFI") then
-  local drives = {peripheral.find("drive", disk.hasData)}
+  local drives = {peripheral.find("drive", function() return disk.hasData(side) and fs.exists(disk.getMounthPath(side).."/startup") end)}
   dp = {{"shell exit", ""},{"Run SimOS", "Exit to shell"}}
   for i=1, #drives do
-    if fs.exists(drives[i].getMountPath().."/startup") then
-      table.insert(dp[1], drives[i].getMountPath().."/startup")
-      if drives[i].getDiskLabel() then
-        table.insert(dp[2], drives[i].getDiskLabel().."(disk ID:"..drives[i].getDiskID()..")")
-      else
-        table.insert(dp[2],"Unlabeled disk (ID:"..drives[i].getDiskID()..")")
-      end
+    table.insert(dp[1], drives[i].getMountPath().."/startup")
+    if drives[i].getDiskLabel() then
+      table.insert(dp[2], drives[i].getDiskLabel().."(disk ID:"..drives[i].getDiskID()..")")
+    else
+      table.insert(dp[2],"Unlabeled disk (ID:"..drives[i].getDiskID()..")")
     end
   end
   if #dp[2]>2 then

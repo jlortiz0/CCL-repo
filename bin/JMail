@@ -20,9 +20,10 @@ local function menu(m, p, n)
   end
 end
 
-print("JMail client")
-print("Type ID of mail server:")
-local sid = tonumber(read())
+print("JMail client by jlortiz")
+if not ... then print("Usage: JMail <server id>") return end
+local sid = tonumber(...)
+if not sid then printError("Not a number.") return end
 rednet.send(sid, "HELO", "JMail")
 local id, msg = rednet.receive("JMail", 10)
 if sid ~= id or msg ~= "OK connect" then
@@ -32,8 +33,8 @@ if sid ~= id or msg ~= "OK connect" then
 end
 local getMsg = function()
   local id, msg = rednet.receive("JMail", 5)
-  if id ~= sid and id ~= nil then return getMsg()
-  elseif id == nil then error("Lost conncection!")
+  if id ~= sid and id then return getMsg()
+  elseif not id then error("Lost conncection!")
   else return msg
   end
 end
