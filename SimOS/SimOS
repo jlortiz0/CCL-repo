@@ -63,7 +63,7 @@ end
 
 --Probably not the best name for it...
 if settings.get("SimOS.UEFI") then
-  local drives = {peripheral.find("drive", function() return disk.hasData(side) and fs.exists(disk.getMounthPath(side).."/startup") end)}
+  local drives = {peripheral.find("drive", function(side) return disk.hasData(side) and fs.exists(disk.getMounthPath(side).."/startup") end)}
   dp = {{"shell exit", ""},{"Run SimOS", "Exit to shell"}}
   for i=1, #drives do
     table.insert(dp[1], drives[i].getMountPath().."/startup")
@@ -84,6 +84,8 @@ system.mainFile = "/"..shell.getRunningProgram()
 system.dir = "/"..fs.combine(system.mainFile, "..")
 
 if ...~="-api" then
+  --I'm too lazy to implement missing log file handling properly
+  fs.open(system.dir.."/SimOS.log", "a").close()
   local lines = {}
   for l in io.lines(system.dir.."/SimOS.log") do
     table.insert(lines, l)
@@ -183,8 +185,8 @@ if ...~="-api" then
   	end
   end
   system.log("Played logo animation.")
-  print("Press F8 or Fn+F8 to pause startup...")
-  if parallel.waitForAny(function() system.waitForKey(66) end, function() sleep(3) end)==1 then
+  print("Press SHIFT to pause startup...")
+  if parallel.waitForAny(function() system.waitForKey(42) end, function() system.waitForKey(54) end, function() sleep(3) end)~=3 then
     system.log("User entered advanced startup menu.")
     local n = system.drawMenu({"Continue boot","Start in safemode", "Exit to CraftOS", "Shutdown"}, "Startup paused.\n")
     if n==4 then os.shutdown()
@@ -224,10 +226,24 @@ if not system.safemode then
   end
 end
 if ...=="-api" or system.safemode=="exit" then return end
+if ...=="-panic" then os=false end
+
+local function checkEnv()
+  local checklist = {"os", "loadfile", "load", "fs", "textutils", "type", "system", "table", "shell"}
+  for _,v in ipairs(checklist) do
+    if not _ENV[v] then
+      return false, v
+    end
+  end
+  return true
+end
 
 local function main()
   local n=1
   while true do
+    if not checkEnv() then
+      error("KERNEL PANIC!", 0)
+    end
     local progs = system.get("programs")
     local active = {}
     for i=1,#progs do
@@ -268,8 +284,59 @@ local function main()
     end 
   end
 end
-local ok, error = pcall(main)
-if not ok then
-  system.log("Fatal SimOS error! "..error)
-  system.drawMenu({"OK"}, "Sorry, but SimOS has encountered an error and must close.\nThe error is as follows:\n"..error)
+
+while true do
+  local ok, error = pcall(main)
+  if not ok then
+    if system and os then system.log("Fatal SimOS error! "..error) end
+    local p
+    if error=="Terminated" then
+      p="What, you thought you could escape this easily? \nHAHAHAHAHAHAHAHAHA!"
+    elseif error=="KERNEL PANIC!" then
+      if not (os and load and loadfile and fs and type and table) then
+        term.clear()
+        term.setCursorPos(1,1)
+        print("KERNEL PANIC!")
+        print("Cannot access a Java API.")
+        print("Cannot recover from this error.")
+        print("Unsafe to run shell.")
+        print("We are hanging here, hold Ctrl+R to reboot...")
+        while true do coroutine.yield() end
+      end
+      while not checkEnv() do
+        if checkEnv()=="shell" or checkEnv()=="system" then break end
+        os.loadAPI("rom/apis/"..select(2, checkEnv()))
+      end
+      if not shell then
+        print("KERNEL PANIC!")
+        print("Cannot acces the CraftOS shell API.")
+        print("MIGHT be safe to run shell.")
+        print("Start a new shell instance or just return?(y/n)")
+        while true do
+          local event, key = coroutine.yield()
+          if event=="key" then
+            if key=="y" then
+              if term.native().isColor() then
+                os.run({}, "/rom/programs/advanced/multishell")
+              else
+                os.run({}, "/rom/programs/shell")
+              end
+            end
+          end
+        end
+        return
+      end
+      if not system then
+        os.run({["shell"]=shell},shell.getRunningProgram(), "-api")
+      end
+      p="SimOS has issued a kernel panic.\nWe have attempted to resolve all issues."
+    else
+      p = "Sorry, but SimOS has encountered an error and must close.\nThe error is as follows:\n"..error
+    end
+    if system.drawMenu({"Attempt restart", "Exit to shell"}, p)==2 then
+      break
+   end
+  else
+    break
+  end
 end
