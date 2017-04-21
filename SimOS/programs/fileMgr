@@ -71,7 +71,7 @@ while true do
       elseif set.prog[act]=="$ADDPROG" then
         local progs = system.get("programs")
         write("Name of program:")
-        table.insert(progs, {read(), "/"..fs.combine(path,fl[n]), "rmlistentry"})
+        table.insert(progs, {read(), "/"..fs.combine(path,fl[n]), "rmlistentry", nil, 1})
         system.set("programs", progs)
       else
         shell.run(string.gsub(set.prog[act], "$PATH", "\\"..fs.combine(path, fl[n])))

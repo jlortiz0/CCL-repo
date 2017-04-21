@@ -9,35 +9,18 @@ if ... then
     local _, key = os.pullEvent()
     if key ~= keys.n then return end
   end
-  local ans
+  write("Name of program:")
+  local stuff, ver = {read(), fs.getName(args), "rm "..fs.getName(args), fs.getName(args)}
   while true do
-   print("[1] Program\n[2] Startup Script")
-   ans = read()
-   if ans=="1" then
-     table.insert(stuff, "prog")
-     break
-   elseif ans=="2" then
-     table.insert(stuff, "start")
-     break
-   else
-     print("Try again.")
-   end
+	write("Version:")
+	ver = tonumber(read())
+    if not ver then
+	print("Try again.")
+    else break end
   end
-  if ans=="1" then
-	write("Name of program:")
-	local stuff, ver = {read(), fs.getName(args), "rm "..fs.getName(args), fs.getName(args)}
-	while true do
-	  write("Version:")
-	  ver = tonumber(read())
-      if not ver then
-		print("Try again.")
-      else break end
-    end
-    table.insert(stuff, ver)
-  end
+  table.insert(stuff, ver)
   local h = fs.open(args, "r")
   table.insert(stuff, h.readAll())
-  table.insert(stuff, table.remove(stuff, 1))
   h.close()
   h=fs.open("apt-share/"..fs.getName(args), "w")
   h.write(textutils.serialize(stuff))
@@ -51,7 +34,7 @@ while true do
     list = fs.list("/apt-share/")
     for i=1, #list do
       h = fs.open("/apt-share/"..list[i], "r")
-      list[i]={list[i], os.computerID(), function() local h = textutils.unserialise(h.readAll()) if #h==7 then return h[5], h[7] else return h[2] end end}
+      list[i]={list[i], os.computerID(), textutils.unserialise(h.readAll())[5]}
       h.close()
     end
     rednet.send(id, list, "SimOSAPT")

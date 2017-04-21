@@ -15,6 +15,13 @@
       "sysFileMgr",
       1,
     },
+	{
+	  "Lua Console",
+	  "/rom/programs/lua",
+	  "rmlistentry",
+	  nil,
+	  1,
+	},
   },
   version = 0.85,
   fileMgr = {

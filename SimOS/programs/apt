@@ -25,7 +25,7 @@ elseif tArgs[1]=="upgrade" then
     if pkl[progs[i][4]] and pkl[progs[i][4]][2]>progs[i][5] then
       if (not tArgs[2]) or progs[i][4]==tArgs[2] then
         num = num + 1
-        shell.run("/"..system.dir.."/programs/apt install",progs[i][4],"-upgrade", i)
+        shell.run("/"..system.dir.."/programs/apt install",progs[i][4],"-f", i)
         print("Upgraded "..progs[i][1])
       end
     end
@@ -36,7 +36,7 @@ elseif tArgs[1]=="install" and tArgs[2] then
   if not pkls[tArgs[2]] then
     print("Could not find package, try apt update.")
     return
-  elseif ((not tArgs[3]) or tArgs[3]~="-upgrade") and #pkls[tArgs[2]]==4 then
+  elseif ((not tArgs[3]) or tArgs[3]~="-f") and #pkls[tArgs[2]]==4 then
     local progs = system.get("programs")
     for i=1, #progs do
       if progs[i][4]==tArgs[2] then
@@ -58,7 +58,7 @@ elseif tArgs[1]=="install" and tArgs[2] then
     print("Server did not reply, try again or ask an admin.")
   elseif data=="nope" then
     print("Server could not find package, try running apt update.")
-  elseif #data==7 and type(data[6])=="string" then
+  elseif type(data[6])=="string" then
       local f = fs.open(system.dir.."/programs/"..tArgs[2], "w")
       f.write(data[6])
       f.close()
@@ -68,11 +68,6 @@ elseif tArgs[1]=="install" and tArgs[2] then
       table.remove(progs[tArgs[4]])
       table.remove(profs[tArgs[4]])
       system.set("programs", progs)
-  elseif #data==2 then
-    local f = fs.open(system.dir.."/startup/"..tArgs[2], "w")
-    f.write(data[6])
-    f.close()
-	tArgs[5]="Donut Save"
   else
       print("Multifile support not implemented.")
       return
