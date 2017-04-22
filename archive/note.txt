@@ -1,3 +1,0 @@
-This folder is full of my abandoned projects.
-Noting in here will be updated, and don't expect things to work too well.
-Some projects may be archives of old versions. In that case, don't expect them to work with newer versions.

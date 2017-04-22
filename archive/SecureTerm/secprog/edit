@@ -1,9 +1,0 @@
-if shell.dir() == "" then
-os.shutdown()
-end
-local tArgs = {...}
-if tArgs[1] then
-shell.run("/rom/programs/edit "..tArgs[1])
-else
-shell.run("/rom/programs/edit")
-end
