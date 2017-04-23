@@ -12,10 +12,10 @@ if ... then
   write("Name of program:")
   local stuff, ver = {read(), fs.getName(args), "rm "..fs.getName(args), fs.getName(args)}
   while true do
-	write("Version:")
-	ver = tonumber(read())
+	   write("Version:")
+	   ver = tonumber(read())
     if not ver then
-	print("Try again.")
+	     print("Try again.")
     else break end
   end
   table.insert(stuff, ver)

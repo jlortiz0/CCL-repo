@@ -25,14 +25,14 @@ local path = shell.resolve(read().."/")
 
 local function unzip(dir, tab)
   for k,v in pairs(tab) do
-	if type(v) == "table" then
-	  fs.makeDir(fs.combine(dir, k))
-	  unzip(fs.combine(dir, k), v)
-	else
-	  local fi = fs.open(fs.combine(dir, k), "w")
-	  fi.writeLine(v)
-	  fi.close()
-	end 
+	   if type(v) == "table" then
+	     fs.makeDir(fs.combine(dir, k))
+	     unzip(fs.combine(dir, k), v)
+	   else
+	     local fi = fs.open(fs.combine(dir, k), "w")
+	     fi.writeLine(v)
+	     fi.close()
+	   end 
   end 
 end
 

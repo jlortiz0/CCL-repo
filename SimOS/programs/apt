@@ -59,21 +59,31 @@ elseif tArgs[1]=="install" and tArgs[2] then
   elseif data=="nope" then
     print("Server could not find package, try running apt update.")
   elseif type(data[6])=="string" then
-      local f = fs.open(system.dir.."/programs/"..tArgs[2], "w")
-      f.write(data[6])
-      f.close()
-      local progs = system.get("programs")
-      tArgs[4]=tonumber(tArgs[4])
-      progs[tArgs[4]]=data
-      table.remove(progs[tArgs[4]])
-      table.remove(profs[tArgs[4]])
-      system.set("programs", progs)
+    local f = fs.open(system.dir.."/programs/"..tArgs[2], "w")
+    f.write(data[6])
+    f.close()
   else
-      print("Multifile support not implemented.")
-      return
+    local function unzip(dir, tab)
+      for k, v in pairs(tab) do
+        if type(v)=="table" then
+          fs.makeDir(fs.combine(dir, k))
+          unzip(fs.combine(dir, k), v)
+        else
+          local h = fs.open(fs.combine(dir, k), "w")
+          h.write(v)
+          h.close()
+        end
+      end
+    end
+    unzip(system.dir.."/programs/"..data[4], data[6])
   end
   if tArgs[5]~="Donut Save" then
-    print("Sucess.")
+    local progs = system.get("programs")
+    tArgs[4]=tonumber(tArgs[4])
+    progs[tArgs[4]]=data
+    table.remove(profs[tArgs[4]])
+    system.set("programs", progs)
+    print("Success.")
     system.log("APT installed "..tArgs[2])
   end
 elseif tArgs[1]=="addrepo" and tArgs[2] then
@@ -102,7 +112,7 @@ elseif tArgs[1]=="remove" and tArgs[2] then
   local _,key = os.pullEvent("char")
   if key~="y" then return end
   if thingy[i][3]=="nope" then
-    print("APT cannot remove this package, check with your sysadmin.")
+    print("APT cannot remove this package. It may be integral to the system.")
     return
   else
     if thingy[i][3]~="rmlistentry" then
@@ -119,7 +129,7 @@ elseif tArgs[1]=="rmrepo" and tArgs[2] then
   for i=1, #repos.repo do
   	if repos.repo[i]==tArgs[2] then
   	  table.remove(repos.repo, i)
-      system.log("Removed APT repo "..tArgs[2])
+     system.log("Removed APT repo "..tArgs[2])
   	  i=i-1
      break
   	end
