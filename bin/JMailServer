@@ -8,6 +8,16 @@ local set = {
   allownewuser=true,
   sendmailremote=true,
   getmailremote=true,
+  --Blacklist and whitelist settings
+  useblist = false,
+  blist = {
+	--The server shouldn't connect to itself.
+	[os.getComputerID()] = true,
+	},
+  usewlist = false,
+  wlist = {
+	["test"] = true,
+  },
   --The below is used internally and should be kept as true
   run=true,
 }
@@ -24,7 +34,6 @@ local function connect(cid)
     local msg = getMsg()
     if msg=="QUIT" then
       if set.verbose then print(cid.." disconnected") end
-      connected[cid]=nil
       return
     elseif msg=="REGA" then rednet.send(cid, set.allownewuser, "JMail")
     elseif type(msg)=="table" then
@@ -51,7 +60,6 @@ local function connect(cid)
             local msg = getMsg()
             if msg=="QUIT" then 
               if set.verbose then print(cid.." disconnected") end
-              connected[cid]=nil
               return
             elseif type(msg)=="table" then
                 if msg[1]=="GET" and type(msg[2])=="string" then
@@ -134,11 +142,17 @@ local function connector(n)
       if connected[id] then
         if set.verbose then print(id.." is already connected.") end
         rednet.send(id, "Already connected", "JMail")
+	  elseif set.useblist and set.blist[id] then
+		if set.verbose then print(id.." is blacklisted") end
+		rednet.send(id, "Blacklisted", "JMail")
+	  elseif set.usewlist and not set.wlist[id] then
+		if set.verbose then print(id.." is not whitelisted.") end
+		rednet.send(id, "Not whitelisted", "JMail")
       elseif set.run then
         rednet.send(id, "OK connect", "JMail")
         if set.verbose then print(id.." has connected") end
         connected[id]=true
-        parallel.waitForAny(connector, function() local ok, err = pcall(function() connect(id) end); if not ok then printError(err) end end)
+        parallel.waitForAny(connector, function() local ok, err = pcall(function() connect(id) end); if not ok then printError(err) end connected[id]=false end)
         if n then connector(true) end
         return
       else
@@ -146,7 +160,13 @@ local function connector(n)
         rednet.send(id, "System shutting down", "JMail")
       end
     elseif type(msg)=="table" and msg[1]=="SENDMAIL" then
-      if set.getmailremote and #msg>4 and pcall(function() table.concat(msg, "") end) then
+	  if set.useblist and set.blist[id] then
+		if set.verbose then print(id.." sendmail is blacklisted") end
+		rednet.send(id, "The remote server has blacklisted this server.", "JMail")
+	  elseif set.usewlist and not set.wlist[id] then
+		if set.verbose then print(id.." sendmail is not whitelisted.") end
+		rednet.send(id, "The remote server has not whitelisted this server.", "JMail")
+      elseif set.getmailremote and #msg>4 and pcall(function() table.concat(msg, "") end) then
         if set.verbose then print(id.." sendmail connected") end
         if fs.exists("/users/"..msg[3]) and msg[3]~="" then
           if fs.exists("/users/"..msg[3].."/mail/"..msg[4].." from "..msg[2].."@"..id) then
@@ -193,8 +213,8 @@ local function console()
       elseif cmd=="ls" or cmd=="list" or cmd=="dir" then
         shell.run("list", "/users/"..dir)
       elseif cmd=="connected" then
-        for k in pairs(connected) do
-          write(k.." ")
+        for k,v in pairs(connected) do
+          if v then write(k.." ") end
         end
         print()
       else
@@ -205,7 +225,7 @@ local function console()
         if tcmd[1]=="dc" and tcmd[2] then
           os.queueEvent("rednet_message", tonumber(tcmd[2]), "QUIT", "JMail")
         elseif tcmd[1]=="cd" and tcmd[2] then
-          if fs.isDir(fs.combine(dir, tcmd[2])) then
+          if fs.isDir(fs.combine("/users/", fs.combine(dir, tcmd[2]))) then
             dir = "/"..fs.combine(dir, tcmd[2])
           else
             printError("Not a directory.")
@@ -213,7 +233,10 @@ local function console()
         elseif (tcmd[1]=="rm" or tcmd[1]=="delete") and tcmd[2] then
           fs.delete("/users/"..fs.combine(dir, tcmd[2]))
         elseif tcmd[1]=="edit" and tcmd[2] then
-          shell.run("edit", "/users/"..fs.combine(dir, tcmd[2]))
+		  local ls = shell.dir()
+		  shell.setDir("/users/"..dir)
+          shell.run("edit", tcmd[2])
+		  shell.setDir(ls)
         else
           printError("Unknown command.")
         end
