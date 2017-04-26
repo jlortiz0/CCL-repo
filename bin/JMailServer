@@ -212,6 +212,16 @@ local function console()
         return
       elseif cmd=="ls" or cmd=="list" or cmd=="dir" then
         shell.run("list", "/users/"..dir)
+	  elseif cmd=="bl" then
+	    for k,v in pairs(set.blist) do
+          if v then write(k.." ") end
+        end
+		print()
+	  elseif cmd=="wl" then
+	    for k,v in pairs(set.wlist) do
+          if v then write(k.." ") end
+        end
+		print()
       elseif cmd=="connected" then
         for k,v in pairs(connected) do
           if v then write(k.." ") end
@@ -230,13 +240,43 @@ local function console()
           else
             printError("Not a directory.")
           end
-        elseif (tcmd[1]=="rm" or tcmd[1]=="delete") and tcmd[2] then
+        elseif (tcmd[1]=="rm" or tcmd[1]=="delete" or tcmd[1]=="del") and tcmd[2] then
           fs.delete("/users/"..fs.combine(dir, tcmd[2]))
         elseif tcmd[1]=="edit" and tcmd[2] then
-		  local ls = shell.dir()
-		  shell.setDir("/users/"..dir)
+      		  local ls = shell.dir()
+      		  shell.setDir("/users/"..dir)
           shell.run("edit", tcmd[2])
-		  shell.setDir(ls)
+      		  shell.setDir(ls)
+        elseif tcmd[1]=="bl" and tcmd[2] then
+          tcmd[2]=tonumber(tcmd[2])
+          if tcmd[3] then
+            set.blist[tcmd[2]]=textutils.unserialize(tcmd[3])
+            print("Blacklist status of "..tcmd[2].." set to "..tostring(tcmd[2]))
+          else
+            print("Blacklist status of "..tcmd[2]..": "..tostring(set.blist[tcmd[3]]))
+          end
+		elseif tcmd[1]=="wl" and tcmd[2] then
+          tcmd[2]=tonumber(tcmd[2])
+          if tcmd[3] then
+            set.wlist[tcmd[2]]=textutils.unserialize(tcmd[3])
+            print("Whitelist status of "..tcmd[2].." set to "..tostring(tcmd[3]))
+          else
+            print("Whitelist status of "..tcmd[2]..": "..tostring(set.wlist[tcmd[2]]))
+          end
+		elseif tcmd[1]=="ble" then
+          if tcmd[2] then
+            set.useblist=textutils.unserialize(tcmd[2])
+            print("Blacklist enabled set to "..tostring(tcmd[2]))
+          else
+            print("Blacklist enabled is "..tostring(set.useblist))
+          end
+		elseif tcmd[1]=="wle" then
+          if tcmd[2] then
+            set.usewlist=textutils.unserialize(tcmd[2])
+            print("Whitelist enabled set to "..tostring(tcmd[2]))
+          else
+            print("Whitelist enabled is "..tostring(set.usewlist))
+          end
         else
           printError("Unknown command.")
         end
