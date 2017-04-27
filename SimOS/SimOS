@@ -154,15 +154,12 @@ if system.safemode then system.log("Running in safemode.") end
 
 if ...~="-api" then
   if not ... then
-  	local h = paintutils.loadImage(system.dir.."/logo")
-  	for i=-9, 2 do
-  	  sleep(0.1)
-  	  term.clear()
-  	  paintutils.drawImage(h, 2, i)
-  	  term.setBackgroundColor(0x8000)
-      term.setTextColor(1)
-      system.writeCenter("by jlortiz\n\n")
-  	end
+    term.clear()
+   	paintutils.drawImage(paintutils.loadImage(system.dir.."/logo"), 2, 2)
+    term.setBackgroundColor(0x8000)
+    term.setTextColor(1)
+	print()
+    system.writeCenter("by jlortiz\n\n")
   end
   print("Press SHIFT to pause startup...")
   if parallel.waitForAny(function() system.waitForKey(42) end, function() system.waitForKey(54) end, function() sleep(3) end)~=3 then

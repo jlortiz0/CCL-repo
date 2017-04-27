@@ -235,7 +235,7 @@ local function console()
         if tcmd[1]=="dc" and tcmd[2] then
           os.queueEvent("rednet_message", tonumber(tcmd[2]), "QUIT", "JMail")
         elseif tcmd[1]=="cd" and tcmd[2] then
-          if fs.isDir(fs.combine("/users/", fs.combine(dir, tcmd[2]))) then
+          if fs.isDir(fs.combine("/users/", fs.combine(dir, tcmd[2]))) and fs.combine("/users/", fs.combine(dir, tcmd[2]))~="" then
             dir = "/"..fs.combine(dir, tcmd[2])
           else
             printError("Not a directory.")
@@ -245,18 +245,18 @@ local function console()
         elseif tcmd[1]=="edit" and tcmd[2] then
       		  local ls = shell.dir()
       		  shell.setDir("/users/"..dir)
-          shell.run("edit", tcmd[2])
+              shell.run("edit", tcmd[2])
       		  shell.setDir(ls)
         elseif tcmd[1]=="bl" and tcmd[2] then
-          tcmd[2]=tonumber(tcmd[2])
+          tcmd[2]=tonumber(tcmd[2]) or "nil"
           if tcmd[3] then
             set.blist[tcmd[2]]=textutils.unserialize(tcmd[3])
-            print("Blacklist status of "..tcmd[2].." set to "..tostring(tcmd[2]))
+            print("Blacklist status of "..tcmd[2].." set to "..tostring(tcmd[3]))
           else
-            print("Blacklist status of "..tcmd[2]..": "..tostring(set.blist[tcmd[3]]))
+            print("Blacklist status of "..tcmd[2]..": "..tostring(set.blist[tcmd[2]]))
           end
 		elseif tcmd[1]=="wl" and tcmd[2] then
-          tcmd[2]=tonumber(tcmd[2])
+          tcmd[2]=tonumber(tcmd[2]) or "nil"
           if tcmd[3] then
             set.wlist[tcmd[2]]=textutils.unserialize(tcmd[3])
             print("Whitelist status of "..tcmd[2].." set to "..tostring(tcmd[3]))
