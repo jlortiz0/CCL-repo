@@ -62,7 +62,7 @@ while true do
         else
           rednet.send(sid, {"REG", un, ps}, "JMail")
           if getMsg() == true then
-            print("Sucess.")
+            print("Success.")
           else
             print("Registration failed...")
           end
@@ -162,23 +162,18 @@ while true do
           elseif n==4 then
             print("Type current password:")
             local ops = read("*")
-            rednet.send(sid, {"PCHK", ops}, "JMail")
-            if getMsg() == true then
             write("New Password:")
             local nps = read("*")
             write("Confirm:")
             if read("*") == nps then
               rednet.send(sid, {"PC", ops, nps}, "JMail")
               if getMsg() then
-                print("Sucess.")
+                print("Success.")
               else
                 print("Passchange failed...")
               end
             else
               print("Passwords do not match.")
-            end
-            else
-              print("Incorrect password.")
             end
             sleep(2.5)
           end

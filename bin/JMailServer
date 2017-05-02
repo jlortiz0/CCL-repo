@@ -76,18 +76,27 @@ local function connect(cid)
                     end
                 elseif msg[1]=="DEL" and not string.find(msg[2],"../") then fs.delete("/users/"..un.."/mail/"..msg[2])
                 elseif msg[1]=="MV" and not (string.find(msg[2], "../") or string.find(msg[3], "../")) then fs.move("/users/"..un.."/mail/"..msg[2], "/users/"..un.."/mail/"..msg[3])
-                elseif msg[1]=="PCHK" then
-                  local f = fs.open("/users/"..un.."/pass", "r")
-                  rednet.send(cid, f.readAll()==msg[2], "JMail")
-                  f.close()
                 elseif msg[1]=="PC" then
                   local f = fs.open("/users/"..un.."/pass", "r")
                   if f.readAll() ~= msg[2] then 
                     rednet.send(cid, false, "JMail")
+                    f.close()
+                    local i=1
+                    while fs.exists("/users/"..un.."/mail/Passchange Failiure "..i.." from SERVER@"..os.computerID()) do
+                      i=i+1
+                    end
+                    f=fs.open("/users/"..un.."/mail/Passchange Failure "..i.." from SERVER@"..os.computerID(), "w")
+                    f.write("On "..os.day().." at "..os.time().." someone unsucessfully attempted to change your password.\n If this was not you, please secure your account.\nThe request was made from computer "..cid.."\nThanks,\nAdmin")
                   else
                     f.close()
                     f=fs.open("/users/"..un.."/pass", "w")
                     f.write(msg[3])
+					f.close()
+					while fs.exists("/users/"..un.."/mail/Passchange "..i.." from SERVER@"..os.computerID()) do
+                      i=i+1
+                    end
+                    f=fs.open("/users/"..un.."/mail/Passchange "..i.." from SERVER@"..os.computerID(), "w")
+                    f.write("On "..os.day().." at "..os.time().." someone changed your password to "..msg[3]..".\n If this was not you, please secure your account.\nThe request was made from computer "..cid.."\nThanks,\nAdmin")
                     rednet.send(cid, true, "JMail")
                   end
                   f.close()
