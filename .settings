@@ -1,10 +1,10 @@
 {
-  [ "shell.autocomplete" ] = true,
-  [ "list.show_hidden" ] = true,
-  [ "SimOS.UEFI" ] = true,
-  [ "shell.allow_disk_startup" ] = true,
   [ "bios.use_multishell" ] = true,
+  [ "shell.autocomplete" ] = true,
+  [ "shell.allow_disk_startup" ] = true,
   [ "shell.allow_startup" ] = true,
   [ "lua.autocomplete" ] = true,
+  [ "SimOS.UEFI" ] = true,
+  [ "list.show_hidden" ] = true,
   [ "edit.autocomplete" ] = true,
 }
