@@ -82,6 +82,14 @@ end
 
 system.mainFile = "/"..shell.getRunningProgram()
 system.dir = "/"..fs.combine(system.mainFile, "..")
+if fs.exists(system.dir.."/start") then
+  fs.delete(system.dir.."/start")
+  if system.drawMenu({"Start in safemode", "Start normally"}, "SimOS did not shut down properly.")==1 then
+    os.run({["shell"]=shell, ["multishell"]=multishell}, shell.getRunningProgram(), "-safe")
+    return
+  end
+end
+fs.open(system.dir.."/start", "w").close()
 
 if ...~="-api" then
   --I'm too lazy to implement missing log file handling properly
@@ -165,6 +173,7 @@ if ...~="-api" then
   if parallel.waitForAny(function() system.waitForKey(42) end, function() system.waitForKey(54) end, function() sleep(3) end)~=3 then
     system.log("User entered advanced startup menu.")
     local n = system.drawMenu({"Continue boot","Start in safemode", "Exit to CraftOS", "Shutdown"}, "Startup paused.\n")
+    fs.delete(system.dir.."/start")
     if n==4 then os.shutdown()
     else
       if n == 1 then shell.run(system.mainFile) 
@@ -202,7 +211,10 @@ if not system.safemode then
     end
   end
 end
-if ...=="-api" or system.safemode=="exit" then return end
+if ...=="-api" or system.safemode=="exit" then 
+  fs.delete(system.dir.."/start")
+  return 
+end
 if ...=="-panic" then os=false end
 
 local function main()
@@ -217,7 +229,10 @@ local function main()
       n = system.drawMenu(active, "Welcome to SimOS.\nIt is "..textutils.formatTime(os.time(), system.get("24hr")).." on day "..os.day()..".\n", n)
     if n == #active then
       local n=system.drawMenu({"Cancel", "Exit to CraftOS", "Reboot", "Shutdown"}, "Shutdown Menu:\n")
-	  if n>1 then system.log("We are now exiting...") end
+  	 if n>1 then 
+      system.log("We are now exiting...") 
+      fs.delete(system.dir.."/start")
+    end
       if n==4 then os.shutdown()
       elseif n==3 then os.reboot()
       elseif n==2 then return end
@@ -229,6 +244,7 @@ local function main()
       shell.setDir(system.dir.."/programs/")
       shell.run(progs[n][2])
       shell.setDir(dir)
+      term.setCursorBlink(false)
       system.log("Returning to SimOS main menu...")
       sleep(system.get("endwait"))
     end 
