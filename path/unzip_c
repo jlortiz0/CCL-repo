@@ -23,33 +23,25 @@ print("Please enter directory to unzip to:")
 write(shell.dir().."/")
 local path = shell.resolve(read().."/")
 
-local function unzip(dir, tab)
-  for k,v in pairs(tab) do
-	if type(v) == "table" then
-	  fs.makeDir(fs.combine(dir, k))
-	  unzip(fs.combine(dir, k), v)
-	else
-	  local fi = fs.open(fs.combine(dir, k), "w")
-	  fi.writeLine(v)
-	  fi.close()
-	end 
-  end 
-end
 local num=0
 local function decompress(tab, comp)
   for k, v in pairs(tab) do
   	if type(v)=="table" then
+	  fs.makeDir(fs.combine(path, k))
   	  pcall(function() tab[k]=decompress(v, comp) end)
   	else
-  	  for nk, nv in ipairs(comp) do
+  	  for i=1, #comp do
 	    term.clearLine()
 		term.setCursorPos(1, select(2, term.getCursorPos()))
 		write(num.." operations left "..k)
 		sleep()
 		num=num-1
-  	  	v=v:gsub("`"..string.char(nk+36)..(function() if nk==1 then return "%" else return "" end end)(), nv)
+  	  	v=v:gsub("`"..string.char(i+36), comp[i])
   	  end
-  	  tab[k]=v
+	  local fi = fs.open(fs.combine(path, k), "w")
+	  fi.writeLine(v)
+	  fi.close()
+	  v=nil
   	end
   end
 end
@@ -73,5 +65,5 @@ local function getCount(tab)
 end
 getCount(tab)
 num=num*#mil
-unzip(path, decompress(fat, mil))
+pcall(unzip(path, decompress(fat, mil)))
 print("Unzipping complete")
