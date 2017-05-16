@@ -24,19 +24,19 @@ write(shell.dir().."/")
 local path = shell.resolve(read().."/")
 
 local num=0
-local function decompress(tab, comp)
+local function decompress(tab, comp, path)
   for k, v in pairs(tab) do
   	if type(v)=="table" then
 	  fs.makeDir(fs.combine(path, k))
   	  pcall(function() tab[k]=decompress(v, comp) end)
   	else
   	  for i=1, #comp do
-	    term.clearLine()
-		term.setCursorPos(1, select(2, term.getCursorPos()))
-		write(num.." operations left "..k)
-		sleep()
-		num=num-1
-  	  	v=v:gsub("`"..string.char(i+36), comp[i])
+  	   term.clearLine()
+    		term.setCursorPos(1, select(2, term.getCursorPos()))
+    		write(num.." operations left "..k)
+    		sleep()
+    		num=num-1
+  	  	v=v:gsub("`"..assert(function() if i==1 or i==27 or i==46 then return "%" else return "" end end)()..string.char(i+36), comp[i])
   	  end
 	  local fi = fs.open(fs.combine(path, k), "w")
 	  fi.writeLine(v)
@@ -47,13 +47,6 @@ local function decompress(tab, comp)
 end
 
 local mil = table.remove(fat, 1)
-for i=1, #mil do
-  mil[i]=string.gsub(mil[i], "%%%[", "%[")
-  mil[i]=string.gsub(mil[i], "%%%]", "%]")
-  mil[i]=string.gsub(mil[i], "%%%.", "%.")
-  mil[i]=string.gsub(mil[i], "%%%^", "%^")
-  mil[i]=string.gsub(mil[i], "%%%%", "%%")
-end
 local function getCount(tab)
   for k in pairs(tab) do
     if type(tab[k])=="table" then
@@ -65,5 +58,5 @@ local function getCount(tab)
 end
 getCount(tab)
 num=num*#mil
-pcall(unzip(path, decompress(fat, mil)))
+pcall(function() decompress(fat, mil, path) end)
 print("Unzipping complete")
