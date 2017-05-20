@@ -1,8 +1,8 @@
 local tArgs = {...}
-if #tArgs<1 then
+if #tArgs<2 then
   print("Usage:")
   print("qft send <file> <id>")
-  print("qft recieve <file>")
+  print("qft get <file>")
   return
 end
 if tArgs[1]=="send" then

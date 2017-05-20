@@ -24,19 +24,22 @@ write(shell.dir().."/")
 local path = shell.resolve(read().."/")
 
 local num=0
+local er = {[1]=true, [4]=true, [5]=true, [6]=true, [7]=true, [9]=true, [10]=true, [27]=true, [58]=true, [55]=true}
+local function fix(i) if er[i] then return "%" else return "" end end
 local function decompress(tab, comp, path)
   for k, v in pairs(tab) do
   	if type(v)=="table" then
-	  fs.makeDir(fs.combine(path, k))
-  	  pcall(function() tab[k]=decompress(v, comp) end)
+	    fs.makeDir(fs.combine(path, k))
+  	  decompress(v, comp, fs.combine(path, k))
   	else
   	  for i=1, #comp do
-  	   term.clearLine()
-    		term.setCursorPos(1, select(2, term.getCursorPos()))
-    		write(num.." operations left "..k)
-    		sleep()
-    		num=num-1
-  	  	v=v:gsub("`"..assert(function() if i==1 or i==27 or i==46 then return "%" else return "" end end)()..string.char(i+36), comp[i])
+	      term.clearLine()
+	 	    term.setCursorPos(1, select(2, term.getCursorPos()))
+ 		    write(num.." operations left(This number may be inaccurate)")
+		     num=num-1
+  	  	 v=v:gsub("`"..fix(i)..string.char(i+36), comp[i])
+       os.queueEvent("unzip_event")
+       os.pullEvent()
   	  end
 	  local fi = fs.open(fs.combine(path, k), "w")
 	  fi.writeLine(v)
@@ -47,16 +50,29 @@ local function decompress(tab, comp, path)
 end
 
 local mil = table.remove(fat, 1)
+for i=1, #mil do
+  mil[i]=string.gsub(mil[i], "%%%[", "[")
+  mil[i]=string.gsub(mil[i], "%%%(", "(")
+  mil[i]=string.gsub(mil[i], "%%%.", ".")
+  mil[i]=string.gsub(mil[i], "%%%^", "^")
+  mil[i]=string.gsub(mil[i], "%%%%", "%")
+  mil[i]=string.gsub(mil[i], "%%%)", ")")
+  mil[i]=string.gsub(mil[i], "%%%$", "$")
+  mil[i]=string.gsub(mil[i], "%%%*", "*")
+  mil[i]=string.gsub(mil[i], "%%%-", "-")
+  mil[i]=string.gsub(mil[i], "%%%+", "+")
+  mil[i]=string.gsub(mil[i], "%%%?", "?")
+end
 local function getCount(tab)
-  for k in pairs(tab) do
-    if type(tab[k])=="table" then
-	  getCount(tab[k])
-	else
-	  num=num+1
-	end
+  for k,v in pairs(tab) do
+    if type(v)=="table" then
+	     getCount(v)
+	   else
+	     num=num+1
+	   end
   end
 end
 getCount(tab)
-num=num*#mil
+num=num*#mil/2
 pcall(function() decompress(fat, mil, path) end)
 print("Unzipping complete")

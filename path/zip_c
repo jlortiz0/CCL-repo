@@ -29,7 +29,7 @@ local function compress1(tab)
     if type(v)=="table" then
       compress1(v)
     else
-	num = num+1
+    	 num = num+1
       for m in string.gmatch(v, "[^ \n(),]+") do
         if #m>2 then
           if not times[m] then times[m]=1
@@ -57,9 +57,15 @@ table.sort(tdos)
 for i=1, #tdos do
 	tdos[i]=string.gsub(tdos[i], "%%", "%%%%")
 	tdos[i]=string.gsub(tdos[i], "%[", "%%[")
-	tdos[i]=string.gsub(tdos[i], "%]", "%%]")
+	tdos[i]=string.gsub(tdos[i], "%(", "%%(")
+	tdos[i]=string.gsub(tdos[i], "%)", "%%)")
 	tdos[i]=string.gsub(tdos[i], "%.", "%%.")
 	tdos[i]=string.gsub(tdos[i], "%^", "%%^")
+	tdos[i]=string.gsub(tdos[i], "%$", "%%$")
+	tdos[i]=string.gsub(tdos[i], "%+", "%%+")
+	tdos[i]=string.gsub(tdos[i], "%*", "%%*")
+	tdos[i]=string.gsub(tdos[i], "%-", "%%-")
+	tdos[i]=string.gsub(tdos[i], "%?", "%%?")
 end
 num=num*#tdos
 local function compress2(tab)
@@ -68,11 +74,13 @@ local function compress2(tab)
       tab[k]=compress2(v)
     else
       for i=1, #tdos do
-		term.clearLine()
-		term.setCursorPos(1, select(2, term.getCursorPos()))
-		write(num.." operations left")
-		num=num-1
+      		term.clearLine()
+      		term.setCursorPos(1, select(2, term.getCursorPos()))
+      		write(num.." operations left")
+      		num=num-1
         pcall(function() tab[k] = string.gsub(tab[k], tdos[i], "`"..string.char(i+36)) end)
+        os.queueEvent("zip_event")
+        os.pullEvent()
       end
     end
   end
@@ -82,7 +90,7 @@ tab=compress2(tab)
 table.insert(tab, 1, tdos)
 table.insert(tab, 1, "JZip")
 local fin = fs.open(shell.resolve(tArgs[2]..".jzip"), "w")
-fin.writeLine("print(\"Use JUnzip to unzip this file\")")
+fin.writeLine("print(\"Use JUnzip_c to unzip this file\")")
 fin.writeLine("return")
 fin.write(textutils.serialise(tab))
 fin.close()
