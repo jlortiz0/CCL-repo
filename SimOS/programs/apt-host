@@ -32,12 +32,14 @@ while true do
   id, msg = rednet.receive("SimOSAPT")
   if msg=="update" then
     list = fs.list("/apt-share/")
+	local nl = {}
     for i=1, #list do
       h = fs.open("/apt-share/"..list[i], "r")
-      list[i]={list[i], os.computerID(), textutils.unserialise(h.readAll())[5]}
+      nl[list[i]]={list[i], os.computerID(), textutils.unserialise(h.readAll())[5]}
       h.close()
     end
-    rednet.send(id, list, "SimOSAPT")
+    rednet.send(id, nl, "SimOSAPT")
+	nl=nil
   elseif msg=="PING" then
     rednet.send(id, "PONG", "SimOSAPT")
   else

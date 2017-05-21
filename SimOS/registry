@@ -19,7 +19,6 @@
       "Lua Console",
       "/rom/programs/lua",
       "rmlistentry",
-      [ 5 ] = 1,
     },
   },
   version = 0.85,
@@ -43,6 +42,6 @@
     repo = {
       1,
     },
-    pkl = {},
+	installed={},
   },
 }

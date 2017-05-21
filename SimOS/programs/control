@@ -53,17 +53,14 @@ while true do
     n=1
     while true do
       local apt = system.get("apt")
-      n=DM({"Exit", "Clear package cache", "Add repo",table.unpack(apt.repo)}, "Select a repo to remove it or an option to...uh...execute it?\n",n)
+      n=DM({"Exit", "Add repo",table.unpack(apt.repo)}, "Select a repo to remove it or an option to...uh...execute it?\n",n)
       if n==1 then break
       elseif n==2 then
-        apt.pkl = {}
-        system.set("apt", apt)
-        system.saveSettings()
-      elseif n==3 then
         write("Computer ID of repo:")
         shell.run("apt addrepo", read())
         sleep(1.5)
-      else table.remove(apt, n-3)
+      else 
+	    table.remove(apt.repo, n-3)
       end
     end
     system.saveSettings()
