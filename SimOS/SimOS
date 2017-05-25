@@ -82,7 +82,7 @@ end
 
 system.mainFile = "/"..shell.getRunningProgram()
 system.dir = "/"..fs.combine(system.mainFile, "..")
-if fs.exists(system.dir.."/start") then
+if fs.exists(system.dir.."/start") and ...~="-api" then
   fs.delete(system.dir.."/start")
   if system.drawMenu({"Start in safemode", "Start normally"}, "SimOS did not shut down properly.")==1 then
     os.run({["shell"]=shell, ["multishell"]=multishell}, shell.getRunningProgram(), "-safe")
@@ -108,27 +108,6 @@ if ...~="-api" then
     log.flush()
   end
   system.log("SimOS started in "..system.dir.." on "..os.day().." at "..textutils.formatTime(os.time()))
-end
-
-fs.delete(system.dir.."/tmp")
-local h = fs.open(system.dir.."/tmp/.ignoreme", "w")
-h.write("This directory is used to implement io.tmpfile.\nAnything in this directory will be deleted when SimOS starts.\nThis file is here to make sure Git syncs the folder.")
-h.close()
-function io.tmpfile(name, del)
-  name = name or ""
-  local i = 0
-  repeat
-    i=i+1
-  until not fs.exists(system.dir.."/tmp/"..name.."temp"..i)
-  local file = fs.open(system.dir.."/tmp/"..name.."temp"..i, "w")
-  if not del then
-    local oldclose = file.close
-    file.close = function()
-      oldclose()
-      fs.delete(system.dir.."/tmp/"..name.."temp"..i)
-    end
-  end 
-  return file, (system.dir.."/tmp/"..name.."temp"..i) 
 end
 
 function bit.tobits(num)
@@ -178,7 +157,7 @@ if ...~="-api" then
     else
       if n == 1 then shell.run(system.mainFile) 
       elseif n==2 then shell.run(system.mainFile, "-safe") end
-	  system.log("Now exiting...")
+    	   system.log("Now exiting...")
       return
     end 
   end
@@ -242,11 +221,13 @@ local function main()
       term.setCursorPos(1,1)
       local dir = shell.dir()
       shell.setDir(system.dir.."/programs/")
-      shell.run(progs[n][2])
+      if not shell.run(progs[n][2]) then
+        print("Press the spacebar to continue...")
+        system.waitForKey(keys.space)
+      end
       shell.setDir(dir)
       term.setCursorBlink(false)
       system.log("Returning to SimOS main menu...")
-      sleep(system.get("endwait"))
     end 
   end
 end

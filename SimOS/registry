@@ -1,5 +1,4 @@
 {
-  endwait = 2,
   programs = {
     {
       "Control Panel",
@@ -21,7 +20,7 @@
       "rmlistentry",
     },
   },
-  version = 0.85,
+  version = 0.5,
   fileMgr = {
     proguf = {
       "Run",
@@ -42,6 +41,5 @@
     repo = {
       1,
     },
-	installed={},
   },
 }

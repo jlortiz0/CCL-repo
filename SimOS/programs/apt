@@ -10,9 +10,6 @@ local function getPkl()
       for k, v in pairs(data) do
         info[k]=v
       end
-	else
-	  table.remove(repos, i)
-	  i=i-1
     end
   end
   return info
@@ -24,7 +21,7 @@ if tArgs[1]=="upgrade" then
   for i=1, #progs do
     if pkl[progs[i][4]] and pkl[progs[i][4]][2]>progs[i][5] then
       if (not tArgs[2]) or progs[i][4]==tArgs[2] then
-	    table.remove(progs, i)
+	       table.remove(progs, i)
         num = num + 1
         shell.run(shell.getRunningProgram(), "install", progs[i][4], "-f")
         print("Upgraded "..progs[i][1])
@@ -37,7 +34,7 @@ elseif tArgs[1]=="install" and tArgs[2] then
   if not pkls[tArgs[2]] then
     print("Could not find package.")
     return
-  elseif (not tArgs[3]) or tArgs[3]~="-f" then
+  elseif tArgs[3]~="-f" then
     local progs = system.get("apt").installed
     if progs[tArgs[2]] then
       print("Package already installed, did you mean apt upgrade "..tArgs[2].."?")
@@ -80,9 +77,9 @@ elseif tArgs[1]=="install" and tArgs[2] then
     table.insert(progs, data)
     table.remove(progs[#progs])
     system.set("programs", progs)
-	local inst = system.get("apt")
-	inst.installed[tArgs[2]]=true
-	system.set("apt", inst)
+    local inst = system.get("apt")
+	   inst.installed[tArgs[2]]=true
+	   system.set("apt", inst)
     print("Success.")
     system.log("APT installed "..tArgs[2])
   end
@@ -138,6 +135,24 @@ elseif tArgs[1]=="rmrepo" and tArgs[2] then
   	end
   end
   system.set("apt", repos)
+elseif tArgs[1]=="list" and #tArgs>1 then
+  rednet.send(tonumber(tArgs[2]), "update", "SimOSAPT")
+  local _, data = rednet.receive("SimOSAPT",5)
+  if type(data)=="table" then
+    local nt = {}
+    for k in pairs(data) do
+      table.insert(nt, k)
+    end
+    table.insert(nt, "Exit")
+    local n=1
+    repeat
+      n=system.drawMenu(nt, "List of packages from "..tArgs[2], n)
+    until n==#nt 
+  else
+    printError("Got invalid data from server!:")
+    print(tostring(data))
+  end
+  tArgs[5]="Donut Save"
 else
   tArgs[5]="Donut Save"
   print("apt upgrade [appid] - Installs new versions of applications.")
@@ -145,6 +160,7 @@ else
   print("apt install <package> - Installs the specified package.")
   print("apt remove <package> - Removes an installed package.")
   print("apt rmrepo <id> - Removes an apt repository.")
+  print("apt list <repoid> - Lists the packages on a repo.")
   print("apt help - Take a guess.")
 end
 

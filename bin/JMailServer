@@ -91,8 +91,8 @@ local function connect(cid)
                     f.close()
                     f=fs.open("/users/"..un.."/pass", "w")
                     f.write(msg[3])
-					f.close()
-					while fs.exists("/users/"..un.."/mail/Passchange "..i.." from SERVER@"..os.computerID()) do
+					               f.close()
+					               while fs.exists("/users/"..un.."/mail/Passchange "..i.." from SERVER@"..os.computerID()) do
                       i=i+1
                     end
                     f=fs.open("/users/"..un.."/mail/Passchange "..i.." from SERVER@"..os.computerID(), "w")
@@ -138,7 +138,7 @@ local function connect(cid)
         rednet.send(cid, false, "JMail")
       end
     else
-        rednet.send(cid, false, "JMail")
+      rednet.send(cid, false, "JMail")
     end
   end
 end
@@ -151,12 +151,12 @@ local function connector(n)
       if connected[id] then
         if set.verbose then print(id.." is already connected.") end
         rednet.send(id, "Already connected", "JMail")
-	  elseif set.useblist and set.blist[id] then
-		if set.verbose then print(id.." is blacklisted") end
-		rednet.send(id, "Blacklisted", "JMail")
-	  elseif set.usewlist and not set.wlist[id] then
-		if set.verbose then print(id.." is not whitelisted.") end
-		rednet.send(id, "Not whitelisted", "JMail")
+	     elseif set.useblist and set.blist[id] then
+		      if set.verbose then print(id.." is blacklisted") end
+		      rednet.send(id, "Blacklisted", "JMail")
+	     elseif set.usewlist and not set.wlist[id] then
+		      if set.verbose then print(id.." is not whitelisted.") end
+		      rednet.send(id, "Not whitelisted", "JMail")
       elseif set.run then
         rednet.send(id, "OK connect", "JMail")
         if set.verbose then print(id.." has connected") end
@@ -169,12 +169,12 @@ local function connector(n)
         rednet.send(id, "System shutting down", "JMail")
       end
     elseif type(msg)=="table" and msg[1]=="SENDMAIL" then
-	  if set.useblist and set.blist[id] then
-		if set.verbose then print(id.." sendmail is blacklisted") end
-		rednet.send(id, "The remote server has blacklisted this server.", "JMail")
-	  elseif set.usewlist and not set.wlist[id] then
-		if set.verbose then print(id.." sendmail is not whitelisted.") end
-		rednet.send(id, "The remote server has not whitelisted this server.", "JMail")
+	     if set.useblist and set.blist[id] then
+		      if set.verbose then print(id.." sendmail is blacklisted") end
+		      rednet.send(id, "The remote server has blacklisted this server.", "JMail")
+	     elseif set.usewlist and not set.wlist[id] then
+		      if set.verbose then print(id.." sendmail is not whitelisted.") end
+	      	rednet.send(id, "The remote server has not whitelisted this server.", "JMail")
       elseif set.getmailremote and #msg>4 and pcall(function() table.concat(msg, "") end) then
         if set.verbose then print(id.." sendmail connected") end
         if fs.exists("/users/"..msg[3]) and msg[3]~="" then
@@ -223,74 +223,76 @@ local function console()
         shell.run("list", "/users/"..dir)
 	  elseif cmd=="bl" then
 	    for k,v in pairs(set.blist) do
-          if v then write(k.." ") end
-        end
-		print()
+       if v then write(k.." ") end
+     end
+		   print()
 	  elseif cmd=="wl" then
 	    for k,v in pairs(set.wlist) do
-          if v then write(k.." ") end
-        end
-		print()
-      elseif cmd=="connected" then
-        for k,v in pairs(connected) do
-          if v then write(k.." ") end
-        end
-        print()
-      else
-        local tcmd = {}
-        for k in string.gmatch(cmd, "[^ \t]+") do
-          table.insert(tcmd, k)
-        end
-        if tcmd[1]=="dc" and tcmd[2] then
-          os.queueEvent("rednet_message", tonumber(tcmd[2]), "QUIT", "JMail")
-        elseif tcmd[1]=="cd" and tcmd[2] then
-          if fs.isDir(fs.combine("/users/", fs.combine(dir, tcmd[2]))) and fs.combine("/users/", fs.combine(dir, tcmd[2]))~="" then
-            dir = "/"..fs.combine(dir, tcmd[2])
-          else
-            printError("Not a directory.")
-          end
-        elseif (tcmd[1]=="rm" or tcmd[1]=="delete" or tcmd[1]=="del") and tcmd[2] then
-          fs.delete("/users/"..fs.combine(dir, tcmd[2]))
-        elseif tcmd[1]=="edit" and tcmd[2] then
-      		  local ls = shell.dir()
-      		  shell.setDir("/users/"..dir)
-              shell.run("edit", tcmd[2])
-      		  shell.setDir(ls)
-        elseif tcmd[1]=="bl" and tcmd[2] then
-          tcmd[2]=tonumber(tcmd[2]) or "nil"
-          if tcmd[3] then
-            set.blist[tcmd[2]]=textutils.unserialize(tcmd[3])
-            print("Blacklist status of "..tcmd[2].." set to "..tostring(tcmd[3]))
-          else
-            print("Blacklist status of "..tcmd[2]..": "..tostring(set.blist[tcmd[2]]))
-          end
-		elseif tcmd[1]=="wl" and tcmd[2] then
-          tcmd[2]=tonumber(tcmd[2]) or "nil"
-          if tcmd[3] then
-            set.wlist[tcmd[2]]=textutils.unserialize(tcmd[3])
-            print("Whitelist status of "..tcmd[2].." set to "..tostring(tcmd[3]))
-          else
-            print("Whitelist status of "..tcmd[2]..": "..tostring(set.wlist[tcmd[2]]))
-          end
-		elseif tcmd[1]=="ble" then
-          if tcmd[2] then
-            set.useblist=textutils.unserialize(tcmd[2])
-            print("Blacklist enabled set to "..tostring(tcmd[2]))
-          else
-            print("Blacklist enabled is "..tostring(set.useblist))
-          end
-		elseif tcmd[1]=="wle" then
-          if tcmd[2] then
-            set.usewlist=textutils.unserialize(tcmd[2])
-            print("Whitelist enabled set to "..tostring(tcmd[2]))
-          else
-            print("Whitelist enabled is "..tostring(set.usewlist))
-          end
-        else
-          printError("Unknown command.")
-        end
-      end
-    end
+       if v then write(k.." ") end
+     end
+		   print()
+   elseif cmd=="connected" then
+     for k,v in pairs(connected) do
+       if v then write(k.." ") end
+     end
+     print()
+   else
+     local tcmd = {}
+     for k in string.gmatch(cmd, "[^ \t]+") do
+       table.insert(tcmd, k)
+     end
+     if tcmd[1]=="dc" and tcmd[2] then
+       os.queueEvent("rednet_message", tonumber(tcmd[2]), "QUIT", "JMail")
+     elseif tcmd[1]=="cd" and tcmd[2] then
+       if fs.isDir(fs.combine("/users/", fs.combine(dir, tcmd[2]))) and fs.combine("/users/", fs.combine(dir, tcmd[2]))~="" then
+         dir = "/"..fs.combine(dir, tcmd[2])
+       else
+         printError("Not a directory.")
+       end
+     elseif (tcmd[1]=="rm" or tcmd[1]=="delete" or tcmd[1]=="del") and tcmd[2] then
+       fs.delete("/users/"..fs.combine(dir, tcmd[2]))
+     elseif tcmd[1]=="edit" and tcmd[2] then
+       local ls = shell.dir()
+    	  shell.setDir("/users/"..dir)
+       shell.run("edit", tcmd[2])
+      	shell.setDir(ls)
+     elseif tcmd[1]=="bl" and tcmd[2] then
+       tcmd[2]=tonumber(tcmd[2]) or "nil"
+       if tcmd[3] then
+         set.blist[tcmd[2]]=textutils.unserialize(tcmd[3])
+         print("Blacklist status of "..tcmd[2].." set to "..tostring(tcmd[3]))
+       else
+         print("Blacklist status of "..tcmd[2]..": "..tostring(set.blist[tcmd[2]]))
+       end
+		   elseif tcmd[1]=="wl" and tcmd[2] then
+       tcmd[2]=tonumber(tcmd[2]) or "nil"
+       if tcmd[3] then
+         set.wlist[tcmd[2]]=textutils.unserialize(tcmd[3])
+         print("Whitelist status of "..tcmd[2].." set to "..tostring(tcmd[3]))
+       else
+         print("Whitelist status of "..tcmd[2]..": "..tostring(set.wlist[tcmd[2]]))
+       end
+	   	elseif tcmd[1]=="ble" then
+       if tcmd[2] then
+         set.useblist=textutils.unserialize(tcmd[2])
+         print("Blacklist enabled set to "..tostring(tcmd[2]))
+       else
+         print("Blacklist enabled is "..tostring(set.useblist))
+       end
+		   elseif tcmd[1]=="wle" then
+       if tcmd[2] then
+         set.usewlist=textutils.unserialize(tcmd[2])
+         print("Whitelist enabled set to "..tostring(tcmd[2]))
+       else
+         print("Whitelist enabled is "..tostring(set.usewlist))
+       end
+     else
+       printError("Unknown command.")
+     end
+   end
+   --I give up
+ end
   end
 end
+rednet.host("JMail", tostring(os.computerID()))
 parallel.waitForAll(console, function() connector(true) end)

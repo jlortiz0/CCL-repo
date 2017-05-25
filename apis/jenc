@@ -1,44 +1,43 @@
 --This is a library, use os.loadAPI to start using it
 --Made by jlortiz
-local alpha = {"q","w","e","r","t","y","u","i","o","p","[","]","{","}","\\","|","`","~","1","2","3","4","5","6","7","8","9","0","-","_","=","+","!","@","#","$","%","&","^","*",")","(","a","s","d","f","g","h","j","k","l",";",":","\'","\"","z","x","c","v","b","n","m",",","<",">",".","?","/"}
+--This is essentially an implementation of the Vigenere cipher
+--I recommend that you Google "one time pad" before trying to use this
+local alpha = {"q","w","e","r","t","y","u","i","o","p","[","]","{","}","\\","|","`","~","1","2","3","4","5","6","7","8","9","0","-","_","=","+","!","@","#","$","%","&","^","*",")","(","a","s","d","f","g","h","j","k","l",";",":","\'","\"","z","x","c","v","b","n","m",",","<",">",".","?","/", "Q","W","E","R","T","Y","U","I","O","P","A","S","D","F","G","H","J","K","L","Z","X","C","V","B","N","M"}
 local function index(thing)
-for i=1, #alpha do
-if thing==alpha[i] then 
-return i 
-end
-end
-end
-
-function crypt1(str,pass)
-str = string.lower(str)
-pass = string.lower(pass)
-local done, temp = ""
-local pl = 1
-for i=1, #str do
-temp = index(string.sub(str, i, i))+index(string.sub(pass, pl, pl))
-while temp>#alpha do
-temp=temp-#alpha
-end
-done=done..alpha[temp]
-if pl==#pass then pl=0 end
-pl = pl + 1
-end
-return done
+  for i=1, #alpha do
+    if thing==alpha[i] then 
+      return i 
+    end
+  end
+  return 0
 end
 
-function crypt2(str,pass)
-str = string.lower(str)
-pass = string.lower(pass)
-local done, temp=""
-local pl = 1
-for i=1, #str do
-temp = index(string.sub(str, i, i))-index(string.sub(pass, pl, pl))
-while temp<1 do
-temp=temp+#alpha
+function encrypt(str,pass)
+  local done, temp = ""
+  local pl = 1
+  for i=1, #str do
+    temp = index(string.sub(str, i, i))+index(string.sub(pass, pl, pl))
+    while temp>#alpha do
+      temp=temp-#alpha
+    end
+    done=done..alpha[temp]
+    if pl==#pass then pl=0 end
+    pl = pl + 1
+  end
+  return done
 end
-done=done..alpha[temp]
-if pl==#pass then pl=0 end
-pl=pl+1
-end
-return done
+
+function decrypt(str,pass)
+  local done, temp=""
+  local pl = 1
+  for i=1, #str do
+    temp = index(string.sub(str, i, i))-index(string.sub(pass, pl, pl))
+    while temp<1 do
+      temp=temp+#alpha
+    end
+    done=done..alpha[temp]
+    if pl==#pass then pl=0 end
+    pl=pl+1
+  end
+  return done
 end
