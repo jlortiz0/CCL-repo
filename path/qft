@@ -6,7 +6,7 @@ if #tArgs<2 then
   return
 end
 if tArgs[1]=="send" then
-  tArgs[2]=shell.resolveProgram(tArgs[2])
+  tArgs[2]=shell.resolve(tArgs[2])
   tArgs[3]=tonumber(tArgs[3])
   print("Waiting for ready signal...")
   while true do

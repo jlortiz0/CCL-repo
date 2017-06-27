@@ -1,56 +1,99 @@
-if not fs.isDir("/users/") then fs.makeDir("/users") end
+if not fs.isDir("/mail/") then fs.makeDir("/mail") end
+fs.open("JMailServer.log", "a").close()
 term.clear()
 term.setCursorPos(1,1)
+print("Loading JMailServer 2.3...")
 local set = {
-  verbose=false,
+  logverbose=false,
   --Set below to nil to disable admin password
   adminpass="admin",
   allownewuser=true,
   sendmailremote=true,
   getmailremote=true,
   --Blacklist and whitelist settings
-  useblist = false,
+  useblist = true,
   blist = {
 	--The server shouldn't connect to itself.
-	[os.getComputerID()] = true,
-	},
+	   [os.getComputerID()] = true,
+	 },
   usewlist = false,
-  wlist = {
-	["test"] = true,
+  wlist = {},
+  --Ban settings, make sure to set useblist to true as well
+  fail2ban = true,
+  banduration = 600,
+  --Number of atempts allowed, set to math.huge to disable.
+  logina = 3,
+  rega = math.huge,
+  --A list of usernames that nobody can use
+  bannedun={
+    guest=true,
+    admin=true,
+    public=true,
+    server=true,
   },
   --The below is used internally and should be kept as true
   run=true,
 }
 local connected = {}
+for k in io.lines("JMailServer.log") do
+  table.insert(connected, k)
+end
+while #connected>128 do
+  table.remove(connected, 1)
+end
+local log = fs.open("JMailServer.log", "w")
+log.writeLine(table.concat(connected, "\n"))
+log.flush()
+local function logEvent(t)
+  log.writeLine("["..os.day().."/"..os.time().."] "..t)
+  log.flush()
+end
+logEvent("Starting server...")
+connected={}
 
 local function connect(cid)
+  local la, ra = 0, 0
   local function getMsg()
     local id, msg = rednet.receive("JMail", 600)
     if cid ~= id and id ~= nil then return getMsg()
-    elseif not id then error("Dropped client "..cid)
+    elseif not id then error("Dropped client "..cid, 0)
+    elseif id==cid and not set.run then
+      rednet.send(cid, {"QUIT", "Server shutting down"}, "JMail")
+      return "QUIT"
     else return msg end
   end
   while true do
     local msg = getMsg()
     if msg=="QUIT" then
-      if set.verbose then print(cid.." disconnected") end
+      if set.logverbose then logEvent(cid.." disconnected") end
       return
     elseif msg=="REGA" then rednet.send(cid, set.allownewuser, "JMail")
     elseif type(msg)=="table" then
-      if msg[1]=="VRFY" and type(msg[2])=="string" then rednet.send(cid, fs.isDir("/users/"..msg[2]) and msg[2]~="", "JMail")
-      elseif msg[1]=="REG" and set.allownewuser then
-        if not fs.exists("/users/"..msg[2]) then
-          fs.makeDir("/users/"..msg[2].."/mail")
-          local f = fs.open("/users/"..msg[2].."/pass", "w")
+      if msg[1]=="VRFY" and type(msg[2])=="string" then rednet.send(cid, fs.isDir("/mail/"..msg[2]) and msg[2]~="", "JMail")
+      elseif msg[1]=="REG" and set.allownewuser and not set.bannedun[msg[2]] then
+        if not fs.exists("/mail/"..msg[2]) then
+          fs.makeDir("/mail/"..msg[2].."/mail")
+          local f = fs.open("/mail/"..msg[2].."/pass", "w")
           f.write(msg[3])
           f.close()
-          f = fs.open("/users/"..msg[2].."/mail/Welcome from SERVER@"..os.getComputerID(), "w")
+          f = fs.open("/mail/"..msg[2].."/mail/Welcome from SERVER@"..os.getComputerID(), "w")
           f.write("Hello "..msg[2]..",\nWelcome to mail server "..os.getComputerID()..".\nWe hope that you will find our services satisfactory.\nRemember, your password is "..msg[3]..".\n\nThanks,\nAdmin")
           f.close()
           rednet.send(cid, true, "JMail")
-        else rednet.send(cid, false, "JMail") end
-      elseif msg[1]=="AUTH" and fs.exists("/users/"..msg[2]) then
-        local f = fs.open("/users/"..msg[2].."/pass", "r")
+        else
+          if set.fail2ban then
+            ra=ra+1
+            if ra>set.rega then
+              rednet.send(cid, {"QUIT", "Too many registration attempts; Banned for "..set.banduration.."s"}, "JMail")
+              set.blist[cid]=os.clock()+set.banduration
+              logEvent("Tempbanned "..cid..": too many registration attempts")
+              return
+            end
+          end
+          rednet.send(cid, false, "JMail")
+        end
+      elseif msg[1]=="AUTH" and fs.exists("/mail/"..msg[2]) then
+        local f = fs.open("/mail/"..msg[2].."/pass", "r")
         local ps = f.readAll()
         f.close()
         if ps==msg[3] then
@@ -59,56 +102,58 @@ local function connect(cid)
           while true do
             local msg = getMsg()
             if msg=="QUIT" then 
-              if set.verbose then print(cid.." disconnected") end
+              if set.verbose then logEvent(cid.." disconnected") end
               return
             elseif type(msg)=="table" then
                 if msg[1]=="GET" and type(msg[2])=="string" then
-                    if fs.isDir("/users/"..un.."/mail/"..msg[2]) then
-                        local reply = {fs.list("/users/"..un.."/mail/"..msg[2]), {}}
+                    if fs.isDir("/mail/"..un.."/mail/"..msg[2]) then
+                        local reply = {fs.list("/mail/"..un.."/mail/"..msg[2]), {}}
                         for i=1, #reply[1] do
-                            table.insert(reply[2], fs.isDir("/users/"..un.."/mail/"..msg[2]..reply[1][i]))
+                            table.insert(reply[2], fs.isDir("/mail/"..un.."/mail/"..msg[2]..reply[1][i]))
                         end
                         rednet.send(cid, reply, "JMail")
                     else
-                        local h = fs.open("/users/"..un.."/mail/"..msg[2], "r")
+                        local h = fs.open("/mail/"..un.."/mail/"..msg[2], "r")
                         rednet.send(cid, h.readAll(), "JMail")
                         h.close()
                     end
-                elseif msg[1]=="DEL" and not string.find(msg[2],"../") then fs.delete("/users/"..un.."/mail/"..msg[2])
-                elseif msg[1]=="MV" and not (string.find(msg[2], "../") or string.find(msg[3], "../")) then fs.move("/users/"..un.."/mail/"..msg[2], "/users/"..un.."/mail/"..msg[3])
+                elseif msg[1]=="DEL" and not string.find(msg[2],"../") then fs.delete("/mail/"..un.."/mail/"..msg[2])
+                elseif msg[1]=="MV" and not (string.find(msg[2], "../") or string.find(msg[3], "../")) then fs.move("/mail/"..un.."/mail/"..msg[2], "/mail/"..un.."/mail/"..msg[3])
                 elseif msg[1]=="PC" then
-                  local f = fs.open("/users/"..un.."/pass", "r")
+                  local f = fs.open("/mail/"..un.."/pass", "r")
                   if f.readAll() ~= msg[2] then 
                     rednet.send(cid, false, "JMail")
                     f.close()
+                    logEvent(cid.." failed to change password of "..un)
                     local i=1
-                    while fs.exists("/users/"..un.."/mail/Passchange Failiure "..i.." from SERVER@"..os.computerID()) do
+                    while fs.exists("/mail/"..un.."/mail/Passchange Failiure "..i.." from SERVER@"..os.computerID()) do
                       i=i+1
                     end
-                    f=fs.open("/users/"..un.."/mail/Passchange Failure "..i.." from SERVER@"..os.computerID(), "w")
+                    f=fs.open("/mail/"..un.."/mail/Passchange Failure "..i.." from SERVER@"..os.computerID(), "w")
                     f.write("On "..os.day().." at "..os.time().." someone unsucessfully attempted to change your password.\n If this was not you, please secure your account.\nThe request was made from computer "..cid.."\nThanks,\nAdmin")
                   else
                     f.close()
-                    f=fs.open("/users/"..un.."/pass", "w")
+                    f=fs.open("/mail/"..un.."/pass", "w")
                     f.write(msg[3])
 					               f.close()
-					               while fs.exists("/users/"..un.."/mail/Passchange "..i.." from SERVER@"..os.computerID()) do
+                    logEvent(cid.." changed pass for "..un)
+					               while fs.exists("/mail/"..un.."/mail/Passchange "..i.." from SERVER@"..os.computerID()) do
                       i=i+1
                     end
-                    f=fs.open("/users/"..un.."/mail/Passchange "..i.." from SERVER@"..os.computerID(), "w")
+                    f=fs.open("/mail/"..un.."/mail/Passchange "..i.." from SERVER@"..os.computerID(), "w")
                     f.write("On "..os.day().." at "..os.time().." someone changed your password to "..msg[3]..".\n If this was not you, please secure your account.\nThe request was made from computer "..cid.."\nThanks,\nAdmin")
                     rednet.send(cid, true, "JMail")
                   end
                   f.close()
                 elseif msg[1]=="VRFY" and type(msg[2])=="string" then
-                  rednet.send(cid, fs.isDir("/users/"..msg[2]) and msg[2]~="", "JMail")
+                  rednet.send(cid, fs.isDir("/mail/"..msg[2]) and msg[2]~="", "JMail")
                 elseif msg[1]=="DATA" and pcall(function() table.concat(msg, " ") end) then
                   if msg[2]==os.getComputerID() and set.sendmailremote then
-                    if fs.exists("/users/"..msg[3]) and msg[3]~="" then
-                      if fs.exists("/users/"..msg[3].."/mail/"..msg[4].." from "..un.."@"..os.getComputerID()) then
+                    if fs.exists("/mail/"..msg[3]) and msg[3]~="" then
+                      if fs.exists("/mail/"..msg[3].."/mail/"..msg[4].." from "..un.."@"..os.getComputerID()) then
                         rednet.send(cid, "Pick a different subject.", "JMail")
                       else
-                        local h = fs.open("/users/"..msg[3].."/mail/"..msg[4].." from "..un.."@"..os.getComputerID(), "w")
+                        local h = fs.open("/mail/"..msg[3].."/mail/"..msg[4].." from "..un.."@"..os.getComputerID(), "w")
                         h.write(msg[5])
                         h.close()
                         rednet.send(cid, "Mail sent.", "JMail")
@@ -132,6 +177,16 @@ local function connect(cid)
             end
           end
         else
+          logEvent("Failed login by "..cid.." on username "..msg[2])
+          if set.fail2ban then
+            la=la+1
+            if la>set.logina then
+              rednet.send(cid, {"QUIT", "Too many login attempts; Banned for "..set.banduration.."s"}, "JMail")
+              set.blist[cid]=os.clock()+set.banduration
+              logEvent("Tempbanned "..cid..": Too many login attempts")
+              return
+            end
+          end
           rednet.send(cid, false, "JMail")
         end
       else
@@ -148,40 +203,41 @@ local function connector(n)
     if n and not set.run then return end
     local id, msg = rednet.receive("JMail")
     if msg=="HELO" then
+      if type(set.blist[id])=="number" and os.clock()>set.blist[id] then set.blist[id]=nil end
       if connected[id] then
-        if set.verbose then print(id.." is already connected.") end
+        if set.logverbose then logEvent(id.." is already connected.") end
         rednet.send(id, "Already connected", "JMail")
 	     elseif set.useblist and set.blist[id] then
-		      if set.verbose then print(id.." is blacklisted") end
+		      if set.logverbose then logEvent(id.." is blacklisted") end
 		      rednet.send(id, "Blacklisted", "JMail")
 	     elseif set.usewlist and not set.wlist[id] then
-		      if set.verbose then print(id.." is not whitelisted.") end
+		      if set.logverbose then logEvent(id.." is not whitelisted.") end
 		      rednet.send(id, "Not whitelisted", "JMail")
       elseif set.run then
         rednet.send(id, "OK connect", "JMail")
-        if set.verbose then print(id.." has connected") end
+        if set.logverbose then logEvent(id.." has connected") end
         connected[id]=true
-        parallel.waitForAny(connector, function() local ok, err = pcall(function() connect(id) end); if not ok then printError(err) end connected[id]=false end)
+        parallel.waitForAny(connector, function() local ok, err = pcall(function() connect(id) end); if not ok then logEvent("Session with "..id.." crashed!") logEvent(err) end connected[id]=false end)
         if n then connector(true) end
         return
       else
-        if set.verbose then print(id.."'s connect rejected") end
+        if set.logverbose then logEvent(id.."'s connect rejected") end
         rednet.send(id, "System shutting down", "JMail")
       end
     elseif type(msg)=="table" and msg[1]=="SENDMAIL" then
 	     if set.useblist and set.blist[id] then
-		      if set.verbose then print(id.." sendmail is blacklisted") end
+		      if set.logverbose then logEvent(id.." sendmail is blacklisted") end
 		      rednet.send(id, "The remote server has blacklisted this server.", "JMail")
 	     elseif set.usewlist and not set.wlist[id] then
-		      if set.verbose then print(id.." sendmail is not whitelisted.") end
+		      if set.logverbose then logEvent(id.." sendmail is not whitelisted.") end
 	      	rednet.send(id, "The remote server has not whitelisted this server.", "JMail")
       elseif set.getmailremote and #msg>4 and pcall(function() table.concat(msg, "") end) then
-        if set.verbose then print(id.." sendmail connected") end
-        if fs.exists("/users/"..msg[3]) and msg[3]~="" then
-          if fs.exists("/users/"..msg[3].."/mail/"..msg[4].." from "..msg[2].."@"..id) then
+        if set.logverbose then logEvent(id.." sendmail connected") end
+        if fs.exists("/mail/"..msg[3]) and msg[3]~="" then
+          if fs.exists("/mail/"..msg[3].."/mail/"..msg[4].." from "..msg[2].."@"..id) then
             rednet.send(id, "Pick a different subject.", "JMail")
           else
-            local h = fs.open("/users/"..msg[3].."/mail/"..msg[4].." from "..msg[2].."@"..id, "w")
+            local h = fs.open("/mail/"..msg[3].."/mail/"..msg[4].." from "..msg[2].."@"..id, "w")
             h.write(msg[5])
             h.close()
             rednet.send(id, "Mail sent.", "JMail")
@@ -190,23 +246,28 @@ local function connector(n)
           rednet.send(id, "No such user.", "JMail")
         end
       else
-        if set.verbose then print(id.."'s sendmail rejected") end
+        if set.logverbose then logEvent(id.."'s sendmail rejected") end
         rednet.send(id, "The remote server does not accept outside mail.", "JMail")
       end
     end
   end
 end
 
+local shWords={cp=true, copy=true, rm=true, remove=true, del=true, delete=true, list=true, ls=true, dir=true, mv=true, move=true, ren=true, rename=true, cd=true, edit=true, clear=true, id=true, mkdir=true, type=true}
 local function console()
-  local locked, dir, hist = (true and set.adminpass), "/", {}
+  local locked, dir, hist = (true and set.adminpass), shell.dir(), {}
+  shell.setDir("mail")
   while true do
     if locked then
-      write("Password:")
+      write("Terminal locked.\nPassword:")
       if read("*")==set.adminpass then
         locked=false
+      else
+        print("Incorrect!")
+        logEvent("Incorrect console password entered!")
       end
     else
-      write("mail"..dir..">")
+      write(shell.dir()..">")
       local cmd = read(nil, hist)
       table.insert(hist, cmd)
       if cmd=="lock" and set.adminpass then
@@ -215,22 +276,22 @@ local function console()
         term.setCursorPos(1,1)
       elseif cmd=="exit" then
         set.run = false
+		      shell.setDir(dir)
+        logEvent("Starting shutdown procedure...")
         print("Server shutting down...")
         print("Waiting for current clients to disconnect...")
         os.queueEvent("rednet_message", os.getComputerID(), "HELO", "JMail")
         return
-      elseif cmd=="ls" or cmd=="list" or cmd=="dir" then
-        shell.run("list", "/users/"..dir)
-	  elseif cmd=="bl" then
-	    for k,v in pairs(set.blist) do
-       if v then write(k.." ") end
-     end
-		   print()
-	  elseif cmd=="wl" then
-	    for k,v in pairs(set.wlist) do
-       if v then write(k.." ") end
-     end
-		   print()
+	     elseif cmd=="bl" then
+	       for k,v in pairs(set.blist) do
+          if v then write(k.." ") end
+        end
+		      print()
+	     elseif cmd=="wl" then
+	      for k,v in pairs(set.wlist) do
+         if v then write(k.." ") end
+       end
+		     print()
    elseif cmd=="connected" then
      for k,v in pairs(connected) do
        if v then write(k.." ") end
@@ -243,19 +304,8 @@ local function console()
      end
      if tcmd[1]=="dc" and tcmd[2] then
        os.queueEvent("rednet_message", tonumber(tcmd[2]), "QUIT", "JMail")
-     elseif tcmd[1]=="cd" and tcmd[2] then
-       if fs.isDir(fs.combine("/users/", fs.combine(dir, tcmd[2]))) and fs.combine("/users/", fs.combine(dir, tcmd[2]))~="" then
-         dir = "/"..fs.combine(dir, tcmd[2])
-       else
-         printError("Not a directory.")
-       end
-     elseif (tcmd[1]=="rm" or tcmd[1]=="delete" or tcmd[1]=="del") and tcmd[2] then
-       fs.delete("/users/"..fs.combine(dir, tcmd[2]))
-     elseif tcmd[1]=="edit" and tcmd[2] then
-       local ls = shell.dir()
-    	  shell.setDir("/users/"..dir)
-       shell.run("edit", tcmd[2])
-      	shell.setDir(ls)
+     elseif shWords[tcmd[1]] then
+       shell.run(table.unpack(tcmd))
      elseif tcmd[1]=="bl" and tcmd[2] then
        tcmd[2]=tonumber(tcmd[2]) or "nil"
        if tcmd[3] then
@@ -296,3 +346,6 @@ local function console()
 end
 rednet.host("JMail", tostring(os.computerID()))
 parallel.waitForAll(console, function() connector(true) end)
+logEvent("Server stopped.")
+log.close()
+print("Server stopped.")

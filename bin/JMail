@@ -20,21 +20,23 @@ local function menu(m, p, n)
   end
 end
 
-print("JMail client by jlortiz")
+print("JMail client 2.3 by jlortiz")
 if not ... then print("Usage: JMail <server id>") return end
 local sid = tonumber(...)
 if not sid then printError("Not a number.") return end
 rednet.send(sid, "HELO", "JMail")
 local id, msg = rednet.receive("JMail", 10)
 if sid ~= id or msg ~= "OK connect" then
-  printError("Could not connect.")
-  if type(msg)=="string" then printError("Server error: "..msg) end
+  print("Could not connect.")
+  if type(msg)=="string" then print("Server error: "..msg) end
   return
 end
 local getMsg = function()
   local id, msg = rednet.receive("JMail", 5)
   if id ~= sid and id then return getMsg()
-  elseif not id then error("Lost conncection!")
+  elseif not id then error("Lost connection!", 0)
+  elseif id==sid and type(msg)=="table" and msg[1]=="QUIT" then 
+  error("Server unexpectedly closed connection.\nReason:"..msg[2], 0)
   else return msg
   end
 end
