@@ -1,0 +1,54 @@
+if ... then
+  local args = shell.resolve(...)
+  if (not fs.exists(args)) or fs.isDir(args) then
+    printError("Couldn't find the specified file!")
+    return
+  end
+  if fs.exists("apt-share/"..fs.getName(args)) then
+    print("Package already exists, overwrite? (y/n)")
+    local _, key = os.pullEvent()
+    if key ~= keys.n then return end
+  end
+  write("Name of program:")
+  local stuff, ver = {read(), fs.getName(args), "rm "..fs.getName(args), fs.getName(args)}
+  while true do
+	   write("Version:")
+	   ver = tonumber(read())
+    if not ver then
+	     print("Try again.")
+    else break end
+  end
+  table.insert(stuff, ver)
+  local h = fs.open(args, "r")
+  table.insert(stuff, h.readAll())
+  h.close()
+  h=fs.open("apt-share/"..fs.getName(args), "w")
+  h.write(textutils.serialize(stuff))
+  h.close()
+  return
+end
+local id, msg, list, h
+while true do
+  id, msg = rednet.receive("SimOSAPT")
+  if msg=="update" then
+    list = fs.list("/apt-share/")
+	local nl = {}
+    for i=1, #list do
+      h = fs.open("/apt-share/"..list[i], "r")
+      nl[list[i]]={list[i], os.computerID(), textutils.unserialise(h.readAll())[5]}
+      h.close()
+    end
+    rednet.send(id, nl, "SimOSAPT")
+	nl=nil
+  elseif msg=="PING" then
+    rednet.send(id, "PONG", "SimOSAPT")
+  else
+    if fs.exists("/apt-share/"..msg) then
+      h = fs.open("/apt-share/"..msg, "r")
+      rednet.send(id, textutils.unserialize(h.readAll()), "SimOSAPT")
+      h.close()
+    else
+      rednet.send(id, "nope", "SimOSAPT")
+    end
+  end
+end

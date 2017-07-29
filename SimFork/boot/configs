@@ -1,0 +1,10 @@
+{
+  {
+    "/$SYSDIR/bin/login",
+    "/SimOS/SimOS",
+  },
+  {
+    "SimFork",
+    "SimOS(OLD)",
+  },
+}

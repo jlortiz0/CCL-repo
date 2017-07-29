@@ -194,7 +194,6 @@ if ...=="-api" or system.safemode=="exit" then
   fs.delete(system.dir.."/start")
   return 
 end
-if ...=="-panic" then os=false end
 
 local function main()
   local n=1
@@ -216,7 +215,7 @@ local function main()
       elseif n==3 then os.reboot()
       elseif n==2 then return end
     else
-      system.log("User running "..progs[n][2])
+      --system.log("User running "..progs[n][2])
       term.clear()
       term.setCursorPos(1,1)
       local dir = shell.dir()
@@ -227,7 +226,7 @@ local function main()
       end
       shell.setDir(dir)
       term.setCursorBlink(false)
-      system.log("Returning to SimOS main menu...")
+      --system.log("Returning to SimOS main menu...")
     end 
   end
 end
@@ -235,25 +234,15 @@ end
 while true do
   local ok, error = pcall(main)
   if not ok then
-   if not (os and load and loadfile and fs) then
-      term.clear()
-      term.setCursorPos(1,1)
-      print("KERNEL PANIC!")
-      print("Cannot access OS API.")
-      print("Cannot recover from this error.")
-      print("Unsafe to run shell.")
-      print("We are hanging here, hold Ctrl+R to reboot...")
-      while true do coroutine.yield() end
-    end
     if not system then
-	  if shell then
+	     if shell then
         os.run({["shell"]=shell},shell.getRunningProgram(), "-api")
-	  else
-	    print("Fatal SimOS error: "..error)
-		print("Could not load the proper error handler, exiting...")
-		print("You will have to log this manually.")
-		return
-	  end
+	     else
+	       print("Fatal SimOS error: "..error)
+	      	print("Could not load the proper error handler, exiting...")
+		      print("You will have to log this manually.")
+		      return
+	     end
     end
     system.log("Fatal SimOS error! "..error)
     local p

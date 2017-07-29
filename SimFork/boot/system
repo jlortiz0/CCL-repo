@@ -1,0 +1,54 @@
+function menu(m, pt, n, k)
+  pt=pt or ""
+  n=n or 1
+  k=k or {28}
+  local s,h = term.getSize()
+  h=h-2-print(pt)
+  if n<h then
+    s=1
+  elseif n>(#m-h+1) then
+    s=#m-h+1
+  else
+    s=n-h
+  end
+  while true do
+    term.clear()
+    term.setCursorPos(1,1)
+    print(pt)
+    for i=s,s+h do
+      if i==n then 
+        print("-> ["..m[i].."]")
+      else 
+        print(m[i])
+      end 
+      if #m==i then break end
+    end
+    local _,key = os.pullEvent("key")
+    if key == 200 and n>1 then 
+      n=n-1
+      if n<s then s=s-1 end
+    elseif key == 208 and n<#m then 
+      n=n+1
+      if s<#m-h+1 and n>s+h then s=s+1 end
+    elseif table.indexOf(k, key) then return n, key end
+  end 
+end
+function writeCenter(text)
+  local w = term.getSize()
+  if #text>w then
+    system.writeCenter(string.sub(text, 1, #text/2))
+    print()
+    system.writeCenter(string.sub(text, (#text/2)-1))
+  else
+    local _, h = term.getCursorPos()
+    term.setCursorPos((w/2)-(#text/2), h)
+    write(text)
+  end
+end
+
+function waitForKey(n)
+  while true do
+    local _,key = os.pullEvent("key")
+    if key==n then return end 
+  end 
+end

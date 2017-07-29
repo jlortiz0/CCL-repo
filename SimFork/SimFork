@@ -1,0 +1,17 @@
+local dir=fs.combine(shell.getRunningProgram(), "..")
+os.loadAPI(dir.."/boot/extra")
+os.loadAPI(dir.."/boot/system")
+system.dir="/"..dir
+dir=nil
+if fs.exists(system.dir.."/var/log/system.log") then
+  fs.delete(system.dir.."/var/log/system.log.old")
+  fs.move(system.dir.."/var/log/system.log", system.dir.."/var/log/system.log.old")
+end
+local log = fs.open(system.dir.."/var/log/SimFork.log", "w")
+function system.log(event)
+  log.writeLine("["..os.clock().."]"..tostring(event))
+  log.flush()
+end
+system.log("SimFork started in "..system.dir.." on "..os.day().." at "..textutils.formatTime(os.time()))
+system.log("Opening boot menu")
+shell.run(system.dir.."/boot/loader")

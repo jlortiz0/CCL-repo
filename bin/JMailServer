@@ -344,8 +344,11 @@ local function console()
  end
   end
 end
+local pull = os.pullEvent
+os.pullEvent=os.pullEventRaw
 rednet.host("JMail", tostring(os.computerID()))
 parallel.waitForAll(console, function() connector(true) end)
 logEvent("Server stopped.")
 log.close()
+os.pullEvent=pull
 print("Server stopped.")
