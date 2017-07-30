@@ -1,0 +1,9 @@
+Man is a command line tool that you are probably
+using to view this manpage. It displays manpages
+from $SYSDIR/usr/man/ by default.
+
+Usages:
+  man <topic> --Displays manpage for <topic>, if it exists
+  man topics --Displays list of all topics in /usr/man
+  man hello/world --Displays /usr/man/hello/world
+  man ../bin/hello --Displays /usr/bin/hello

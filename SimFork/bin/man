@@ -1,6 +1,6 @@
 if not ... then print("Usage: man <topic>") print("A list of topics may be obtained with 'man topics'") return end
 if ...=="topics" then textutils.pagedTabulate(fs.list(system.dir.."/usr/man/")) return end
-local h = fs.open(systemdir.."/usr/man/"..(...), "r")
+local h = fs.open(system.dir.."/usr/man/"..(...), "r")
 local l, words, longest = h.readLine(), {"This shouldn't appear"}, 0
 repeat
   if longest<#l then longest=#l end 

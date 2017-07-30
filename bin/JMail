@@ -21,9 +21,17 @@ local function menu(m, p, n)
 end
 
 print("JMail client 2.3 by jlortiz")
-if not ... then print("Usage: JMail <server id>") return end
+if not ... then print("Usage: JMail <server id> or JMail scan") return end
 local sid = tonumber(...)
-if not sid then printError("Not a number.") return end
+if not sid then 
+  if ...=="scan" then
+    print("Scanning for JMail servers...")
+    sid=rednet.lookup("JMail")
+  else
+    printError("Not a number.") 
+    return 
+  end
+end
 rednet.send(sid, "HELO", "JMail")
 local id, msg = rednet.receive("JMail", 10)
 if sid ~= id or msg ~= "OK connect" then

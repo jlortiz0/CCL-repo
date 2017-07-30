@@ -1,0 +1,4 @@
+print("Use CTRL+T to exit")
+while true do
+  print(os.pullEvent())
+end

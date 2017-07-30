@@ -1,7 +1,5 @@
 local drives = {peripheral.find("drive", function(side) return disk.hasData(side) and fs.exists(disk.getMounthPath(side).."/startup") end)}
-local configs = fs.open(system.dir.."/boot/configs", "r")
-local dp=textutils.unserialize(configs.readAll())
-configs.close()
+local dp = system.getcfg("boot")
 for i=1, #dp[1] do
   dp[1][i]=string.gsub(dp[1][i], "$SYSDIR", system.dir)
 end
@@ -15,7 +13,7 @@ for i=1, #drives do
 end
 table.insert(dp[2], "Exit to shell")
 if #dp[2]>2 then
-  local n = system.drawMenu(dp[2], "Multiple boot devices found. Please select one:\n")
+  local n = system.menu(dp[2], "Multiple boot devices found. Please select one:\n")
   if n==#dp[2] then return end
   shell.run(dp[1][n])
 end

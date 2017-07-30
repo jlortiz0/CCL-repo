@@ -1,0 +1,9 @@
+print("Running SimFork on "..(os.computerLabel() or "computer").." with id "..os.computerID())
+print("Installed in "..system.dir)
+print("Screen size: "..table.concat({term.getSize()}, "x"))
+shell.run("peripherals")
+shell.run("rs probe")
+if rednet.isOpen() then
+  print("Connected to rednet.")
+end
+if http then print("Http enabled.") end

@@ -1,0 +1,8 @@
+local apis, apierr=fs.list(system.dir.."/lib/SimFork/")
+for i=1, #apis do
+  apierr=os.loadAPI(system.dir.."/lib/SimFork/"..apis[i])
+end
+if not apierr then
+  print("Press any key to continue...")
+  os.pullEvent("key")
+end

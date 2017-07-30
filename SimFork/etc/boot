@@ -1,6 +1,6 @@
 {
   {
-    "/$SYSDIR/bin/login",
+    "/$SYSDIR/boot/SimFork/init",
     "/SimOS/SimOS",
   },
   {

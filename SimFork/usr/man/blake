@@ -1,0 +1,9 @@
+Blake is a CC implementation of the SHA-3 hashing
+algorithm finalist "BLAKE-256". The winner of the
+competition was "Keccak", but Blake is still secure.
+
+Functions:
+  blake.digest(string data[, string salt])
+  -> string hash
+  --You cannot use a number as the salt.
+  --It must first be converted to a string.

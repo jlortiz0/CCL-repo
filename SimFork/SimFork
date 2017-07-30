@@ -1,16 +1,21 @@
 local dir=fs.combine(shell.getRunningProgram(), "..")
-os.loadAPI(dir.."/boot/extra")
-os.loadAPI(dir.."/boot/system")
+local bapi=fs.list(dir.."/lib/boot")
+for i=1, #bapi do
+  if not os.loadAPI(dir.."/lib/boot/"..bapi[i]) then
+    error("Critical API load failed!")
+  end
+end
 system.dir="/"..dir
 dir=nil
-if fs.exists(system.dir.."/var/log/system.log") then
-  fs.delete(system.dir.."/var/log/system.log.old")
-  fs.move(system.dir.."/var/log/system.log", system.dir.."/var/log/system.log.old")
+if fs.exists(system.dir.."/var/log/syslog") then
+  fs.delete(system.dir.."/var/log/syslog.old")
+  fs.move(system.dir.."/var/log/syslog", system.dir.."/var/log/syslog.old")
 end
-local log = fs.open(system.dir.."/var/log/SimFork.log", "w")
+local log = fs.open(system.dir.."/var/log/syslog", "w").close()
 function system.log(event)
+  log=fs.open(system.dir.."/var/log/syslog", "a")
   log.writeLine("["..os.clock().."]"..tostring(event))
-  log.flush()
+  log.close()
 end
 system.log("SimFork started in "..system.dir.." on "..os.day().." at "..textutils.formatTime(os.time()))
 system.log("Opening boot menu")
