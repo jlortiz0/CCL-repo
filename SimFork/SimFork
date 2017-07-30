@@ -5,6 +5,7 @@ for i=1, #bapi do
     error("Critical API load failed!")
   end
 end
+os.unloadAPI("extra")
 system.dir="/"..dir
 dir=nil
 if fs.exists(system.dir.."/var/log/syslog") then

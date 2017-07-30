@@ -1,0 +1,125 @@
+local list={
+  {
+    coro=coroutine.running(),
+    env=_ENV,
+    fr={},
+    args={select(2, ...)},
+    path=...
+  },
+}
+local function findProcess(pid)
+  for k,v in pairs(list) do
+    if type(pid)=="number" and k==pid then
+      return v
+    end
+    if type(pid)=="thread" and v.coro==pid then
+      return k
+    end
+  end
+end
+local running=false
+
+function create(path, args, env, init, async)
+  if type(path)=="function" and env then
+    error("Cannot use custom environment on a function!", 2)
+  end
+  args=args or {}
+  if type(args)~="table" then
+    error("Argument #2 to process.create must be table or nil", 2)
+  end
+  env=env or _ENV
+  if type(env)~="table" then
+    error("Argument #3 to process.create must be table or nil", 2)
+  end
+  if init and type(init)~="function" then
+    error("Argument #4 to process.create must be function or nil", 2)
+  end
+  init=init or function() end
+  local thread=coroutine.create(
+    function(...)
+      if type(path)=="string" then
+        loadfile(path, env)(init(...))
+      else
+        path(init(...))
+      end
+    end 
+  )
+  if not async then
+    local pid
+    repeat
+      pid=math.random(1, 1000)
+    until not list[pid]
+    list[pid]={
+      coro=thread,
+      parent=findProcess(coroutine.running()),
+      env=env,
+      args=args,
+      r=true,
+    }
+    if type(path)=="string" then
+      list[pid].path=path
+    end
+    return pid
+  else
+    local rets
+    repeat 
+      rets={coroutine.resume(thread, table.unpack(args))}
+      if coroutine.status(thread)~="dead" then
+        repeat
+          args={os.pullEventRaw()}
+        until rets[2]==args[1] or args[1]=="terminate" or not rets[2] 
+      end
+    until coroutine.status(thread)=="dead"
+    return table.unpack(rets)
+  end
+end
+
+function info(pid)
+  pid=list[pid] or findProcess(pid)
+  if type(pid)=="number" then
+    pid=list[pid]
+  end
+  return pid.path, pid.parent, pid.env, pid.args
+end
+
+function close(pid, force)
+  if not list[pid] then
+    error("No such process!", 2)
+  end
+  if (force and list[pid].coro~=coroutine.running()) or list[pid].r then
+    list[pid]=nil
+    return true
+  else
+    coroutine.resume(list[pid].coro, "terminate")
+    sleep(0.1)
+    return (coroutine.status(list[pid].coro)=="dead")
+  end
+  return false
+end
+
+function run()
+  if running==true then return false end
+  running=true
+  local ed, i
+  while true do
+    i=1
+    ed={os.pullEventRaw()}
+	   for i=1, 1000 do
+	     if list[i] and coroutine.status(list[i].coro)=="dead" then
+	       list[i]=nil
+	     end
+	   end
+    for k,v in pairs(list) do
+      i=i+1
+      if coroutine.status(v.coro)~="suspended" then
+      elseif v.r then
+        v.r=nil
+        v.fr=coroutine.resume(v.coro, table.unpack(v.args))
+      elseif v.fr==nil or v.fr[2]==ed[1] or ed[1]=="terminate" then
+        v.fr=coroutine.resume(v.coro, table.unpack(ed))
+      end
+    end
+    if i==2 then break end
+  end
+  running=false
+end
