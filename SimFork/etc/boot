@@ -1,10 +1,10 @@
 {
   {
-    "/$SYSDIR/boot/SimFork/init",
-    "/SimOS/SimOS",
+    "$SYSDIR/boot/SimFork",
+    "$SYSDIR/boot/SimOS",
   },
   {
     "SimFork",
-    "SimOS(OLD)",
+    "SimOS",
   },
 }

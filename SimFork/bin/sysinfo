@@ -6,4 +6,4 @@ shell.run("rs probe")
 if rednet.isOpen() then
   print("Connected to rednet.")
 end
-if http then print("Http enabled.") end
+if http then print("HTTP enabled.") end

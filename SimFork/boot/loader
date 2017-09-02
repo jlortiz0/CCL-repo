@@ -1,5 +1,8 @@
 local drives = {peripheral.find("drive", function(side) return disk.hasData(side) and fs.exists(disk.getMounthPath(side).."/startup") end)}
-local dp = system.getcfg("boot")
+local dpf = fs.open(system.dir.."/etc/boot", "r")
+local dp = textutils.unserialize(dpf.readAll())
+dpf.close()
+dpf=nil
 for i=1, #dp[1] do
   dp[1][i]=string.gsub(dp[1][i], "$SYSDIR", system.dir)
 end

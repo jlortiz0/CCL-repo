@@ -1,0 +1,33 @@
+if not fs.exists(system.dir.."/boot/loader") then
+  printError("ERROR: /boot/loader not found. If that isn't where the bootloader is anymore, please ask jlortiz to fix this error check (or do it yourself).")
+  return
+end
+print("Generating boot configuration file...")
+local final, list, e={{},{}}, fs.list(system.dir.."/boot/")
+for i=1, #list do
+  if fs.isDir(system.dir.."/boot/"..list[i]) then
+    if fs.exists(system.dir.."/boot/"..list[i].."/init") then
+      _, e = loadfile(system.dir.."/boot/"..list[i].."/init")
+      if e then
+        printError("ERR: Compile check on \""..list[i].."/init\" failed at line "..string.sub(e, 30))
+      else
+        table.insert(final[1], "$SYSDIR/boot/"..list[i].."/init")
+        table.insert(final[2], list[i])
+      end
+    else
+      system.printWarn("WARN: Folder \""..list[i].."\" dectected without init file.")
+    end
+  elseif list[i]~="loader" then
+    _, e = loadfile(system.dir.."/boot/"..list[i])
+    if e then
+      printError("ERR: Compile check on \""..list[i].."\" failed at line "..string.sub(e, 26+#list[i]))
+    else
+      table.insert(final[1], "$SYSDIR/boot/"..list[i])
+      table.insert(final[2], list[i])
+    end
+  end
+end
+local fi=fs.open(system.dir.."/etc/boot", "w")
+fi.write(textutils.serialize(final))
+fi.close()
+print("Done!")

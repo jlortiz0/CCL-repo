@@ -1,11 +1,12 @@
 local dir=fs.combine(shell.getRunningProgram(), "..")
-local bapi=fs.list(dir.."/lib/boot")
+--[[local bapi=fs.list(dir.."/lib/boot")
 for i=1, #bapi do
   if not os.loadAPI(dir.."/lib/boot/"..bapi[i]) then
     error("Critical API load failed!")
   end
 end
-os.unloadAPI("extra")
+os.unloadAPI("extra")]]
+os.loadAPI(dir.."/lib/system")
 system.dir="/"..dir
 dir=nil
 if fs.exists(system.dir.."/var/log/syslog") then
