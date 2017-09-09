@@ -34,5 +34,6 @@ end
 system.specialAPILoad(system.dir.."/lib/process")
 --Create some system services processes
 --Also create the UI process(not GUI yet, just UI)
+process.create(system.dir.."/bin/shell")
 process.run()
 --Shutdown procedure

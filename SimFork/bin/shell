@@ -1,0 +1,97 @@
+local dir = system.dir.."/home/"
+local path = {system.dir.."/bin", system.dir.."/usr/bin/", "/rom/programs/", "/rom/programs/", "/rom/programs/fun", "/rom/programs/rednet"}
+if term.isColour() then
+  table.insert(path, "/rom/programs/advanced")
+  table.insert(path, "/rom/programs/fun/advanced")
+end
+if turtle then
+  table.insert(path, "/rom/programs/turtle")
+end
+if http then
+  table.insert(path, "/rom/programs/http")
+end
+if pocket then
+  table.insert(path, "/rom/programs/pocket")
+end
+if commands then
+  table.insert(path, "/rom/programs/command")
+end
+
+local aliases = {
+  ["ls"] = "list",
+  ["dir"]="list",
+  ["cp"]="copy",
+  ["rs"]="redstone",
+  ["mv"]="move",
+  ["rm"]="delete",
+  ["del"]="delete",
+}
+local termColours
+if term.isColour() then
+  termColours = {colours.yellow, colours.white, colours.green}
+else
+  termColours = {colours.white, colours.white, colours.grey}
+end
+
+local newShell = {}
+for k,v in pairs(shell) do
+  newShell[k]=v
+end
+function newShell.resolve(thing)
+  local start = thing:sub(1,1)
+  if start=="/" or start=="\\" then
+    return fs.combine("", thing)
+  else
+    return fs.combine(dir, thing)
+  end
+end
+newShell.isSimFork=true
+function newShell.resolveProgram(thing)
+  while aliases[thing]  and aliases[thing]~=thing do
+    thing=aliases[thing]
+  end
+  local start = thing:sub(1,1)
+  if start=="/" or start=="\\" then
+    thing=fs.combine("", thing)
+    if fs.exists(thing) and not fs.isDir(thing) then return thing end
+  end
+  local nThing
+  for i=1, #path do
+    nThing = fs.combine(newShell.resolve(path[i]), thing)
+    if fs.exists(nThing) and not fs.isDir(nThing) then return nThing end
+  end
+end
+function newShell.dir()
+  return dir
+end
+system.pwd = newShell.dir
+function newShell.setDir(nDir)
+  dir=nDir
+end
+local ok, err
+while true do
+  ok, err = pcall(function() 
+    term.setBackgroundColour(colours.black)
+    term.setTextColour(termColours[1])
+    local cmdHist,temp = {},{}
+    print("SimFork Shell (currently just a clone of CraftOS shell)")
+    while true do
+      term.setTextColour(termColours[3])
+      write("user@"..(os.computerLabel() or "SimFork"..os.computerID())..":"..dir.."$")
+      term.setTextColour(termColours[2])
+      table.insert(cmdHist, read(nil, cmdHist))
+      if cmdHist[#cmdHist]=="exit" then return end
+      temp={}
+      for k in cmdHist[#cmdHist]:gmatch("[^ \t]+") do
+        table.insert(temp, k)
+      end
+      os.run({["shell"]=newShell, ["multishell"]=multishell}, newShell.resolveProgram(temp[1]), table.unpack(temp, 2))
+    end
+  end)
+  if ok then break end
+  if err=="Terminated" then break end
+  print("SimFork shell crashed!")
+  print("Message: "..err)
+  print("Press SPACE to continue or BKSP to exit.")
+  if parallel.waitForAny(function() system.waitForKey(keys.space) end, function() system.waitForKey(keys.backspace) end)==2 then break end
+end

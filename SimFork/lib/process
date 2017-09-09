@@ -21,6 +21,7 @@ local running=false
 
 function create(path, args, env, init, async)
   if type(path)=="function" and env then
+    --Technically, we can. But I'd like to be compatible with >5.1
     error("Cannot use custom environment on a function!", 2)
   end
   args=args or {}
@@ -34,7 +35,7 @@ function create(path, args, env, init, async)
   if init and type(init)~="function" then
     error("Argument #4 to process.create must be function or nil", 2)
   end
-  init=init or function() end
+  init=init or function(...) return ... end
   local thread=coroutine.create(
     function(...)
       if type(path)=="string" then
@@ -67,7 +68,7 @@ function create(path, args, env, init, async)
       if coroutine.status(thread)~="dead" then
         repeat
           args={os.pullEventRaw()}
-        until rets[2]==args[1] or args[1]=="terminate" or not rets[2] 
+        until rets[2]==args[1] or args[1]=="terminate" or rets[2]=="" or not rets[2]
       end
     until coroutine.status(thread)=="dead"
     return table.unpack(rets)
@@ -102,24 +103,24 @@ function run()
   running=true
   local ed, i
   while true do
-    i=1
     ed={os.pullEventRaw()}
 	   for i=1, 1000 do
 	     if list[i] and coroutine.status(list[i].coro)=="dead" then
 	       list[i]=nil
 	     end
 	   end
-    for k,v in pairs(list) do
+    i=0
+    for _,v in pairs(list) do
       i=i+1
       if coroutine.status(v.coro)~="suspended" then
       elseif v.r then
         v.r=nil
-        v.fr=coroutine.resume(v.coro, table.unpack(v.args))
-      elseif v.fr==nil or v.fr[2]==ed[1] or ed[1]=="terminate" then
-        v.fr=coroutine.resume(v.coro, table.unpack(ed))
+        v.fr={coroutine.resume(v.coro, table.unpack(v.args))}
+      elseif (not v.fr[2]) or v.fr[2]==ed[1] or ed[1]=="terminate" then
+        v.fr={coroutine.resume(v.coro, table.unpack(ed))}
       end
     end
-    if i==2 then break end
+    if i==1 then break end
   end
   running=false
 end
