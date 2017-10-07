@@ -1,8 +1,10 @@
 local apis, apierr=fs.list(system.dir.."/lib/SimFork/")
+system.log("Starting SimFork for real..")
 for i=1, #apis do
   apierr=os.loadAPI(system.dir.."/lib/SimFork/"..apis[i])
 end
 if not apierr then
+  system.log("API errors on startup!")
   print("Press any key to continue...")
   os.pullEvent("key")
 end
@@ -34,6 +36,6 @@ end
 system.specialAPILoad(system.dir.."/lib/process")
 --Create some system services processes
 --Also create the UI process(not GUI yet, just UI)
-process.create(system.dir.."/bin/shell")
+process.create(system.dir.."/bin/login")
 process.run()
 --Shutdown procedure

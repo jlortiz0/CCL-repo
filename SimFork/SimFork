@@ -6,6 +6,7 @@ for i=1, #bapi do
   end
 end
 os.unloadAPI("extra")]]
+if system then os.unloadAPI("system") end
 os.loadAPI(dir.."/lib/system")
 system.dir="/"..dir
 dir=nil

@@ -77,7 +77,7 @@ while true do
     print("SimFork Shell (currently just a clone of CraftOS shell)")
     while true do
       term.setTextColour(termColours[3])
-      write("user@"..(os.computerLabel() or "SimFork"..os.computerID())..":"..dir.."$")
+      write(system.username().."@"..(os.computerLabel() or "SimFork"..os.computerID())..":"..dir.."$")
       term.setTextColour(termColours[2])
       table.insert(cmdHist, read(nil, cmdHist))
       if cmdHist[#cmdHist]=="exit" then return end

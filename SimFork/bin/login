@@ -1,0 +1,34 @@
+local pullold=os.pullEvent
+if not blake then return end
+if system.username() then return end
+print((os.computerLabel() or "SimFork"..os.computerID()).." login:")
+local h = fs.open(system.dir.."/etc/passwd", "r")
+local userpass = textutils.unserialize(h.readAll())
+h.close()
+local user, pass, salted
+while true do
+  write("Username:")
+  user=read()
+  write("Password:")
+  pass=read("*")
+  for i=1, #userpass do
+    if userpass[i][1]==user then
+      salted=blake.digest(pass, user)
+      if userpass[i][2]==salted or not userpass[i][2] then
+        if system.setUser(user, pass) then
+          os.pullEvent=pullold
+          shell.run(system.dir.."/"..userpass[i][7])
+          break
+        end
+      else
+        break
+      end
+    end
+  end
+  if system.username()~=user then 
+    print("Login failed.") 
+  else
+    shell.run("clear")
+  end
+  system.setUser(nil)
+end

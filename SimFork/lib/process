@@ -106,6 +106,13 @@ function run()
     ed={os.pullEventRaw()}
 	   for i=1, 1000 do
 	     if list[i] and coroutine.status(list[i].coro)=="dead" then
+        if list[i]["fr"][1]==false then
+          system.log("Coroutine "..i.." crashed!")
+          if list[i].path then
+            system.log("Path to file: "..list[i].path)
+          end
+          system.log("Details: "..list[i]["fr"][2])
+        end
 	       list[i]=nil
 	     end
 	   end

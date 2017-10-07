@@ -86,3 +86,23 @@ function printWarn(text)
     print(text)
   end
 end
+local user
+function username()
+  return table.unpack({user})
+end
+function setUser(new, pass)
+  local h = fs.open(system.dir.."/etc/passwd", "r")
+  local userpass = textutils.unserialize(h.readAll())
+  h.close()
+  salted=blake.digest(pass, new)
+  for i=1, #userpass do
+    if userpass[i][1]==user then
+      if userpass[i][2]==salted or not userpass[i][2] then
+        user=new
+        return true
+      else
+      	return false
+      end
+    end
+  end
+end
