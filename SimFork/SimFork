@@ -20,6 +20,7 @@ function system.log(event)
   log.writeLine("["..os.clock().."]"..tostring(event))
   log.close()
 end
+
 system.log("SimFork started in "..system.dir.." on "..os.day().." at "..textutils.formatTime(os.time()))
 system.log("Opening boot menu")
 shell.run(system.dir.."/boot/loader")

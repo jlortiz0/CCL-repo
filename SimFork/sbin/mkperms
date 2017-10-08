@@ -1,0 +1,33 @@
+if system.username()~="root" then return end
+local _,options=system.parse(... or "")
+function scanFolder(path)
+  local fat={}
+  for _,file in pairs(fs.list(path)) do
+    if fs.isDir(fs.combine(path, file)) then
+      if options.v then print("Scanning directory "..file) end
+      fat[file]=scanFolder(fs.combine(path,file))
+      if (fs.combine(path,file).."/"):sub( 1, 4)=="rom/" then
+        fat[file][1]=222
+      else
+        fat[file][1]=322
+      end
+      fat[file][2]=0
+      fat[file][3]=0
+    else
+      if options.v then print("Added file "..file) end
+      fat[file]={322, 0, 0}
+      if string.sub(fs.combine(path,file).."/", 1, 4)=="rom/" then
+        fat[file][1]=222
+      end
+    end
+  end  
+  return fat
+end
+local temp=scanFolder("")
+temp[1]=333
+temp[2]=0
+temp[3]=0
+local h=fs.open(fs.combine(system.dir, "etc/fsperm"), "w")
+h.write(textutils.serialize(temp))
+h.close()
+print("Done!")

@@ -1,0 +1,36 @@
+local nativefs=fs
+local perms
+local function reload()
+  local h=fs.open(system.dir.."/etc/fsperm", "r")
+  perms=textutils.unserialize(h.readAll())
+  h.close()
+end
+reload()
+local function resolvePath(path)
+  local dirs={fs.getName(path)}
+  while #path>0 do
+    table.insert(dirs, 1, fs.getDir(path))
+    path=fs.getDir(path)
+  end
+  table.remove(dirs, 1)
+  local current=perms
+  for i=1, #dirs do
+    if not current[dirs[i]] then return false end
+    current=current[dirs[i]]
+  end
+  return current
+end
+
+function list(...)
+  local tab=resolvePath(...)
+  if not tab then error("Not a directory", 2) end
+  if tonumber(string.sub(tostring(tab[1]),3))>=2 then
+    return nativefs.list(...)
+  elseif tonumber(string.sub(tostring(tab[1]),2,2))>=2 and select(3, system.username())==tab[3] then
+    return nativefs.list(...)
+  elseif tonumber(string.sub(tostring(tab[1]),1,1))>=2 and select(2, system.username())==tab[2] then
+    return nativefs.list(...)
+  else
+    error("No permission",2)
+  end
+end

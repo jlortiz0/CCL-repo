@@ -86,23 +86,52 @@ function printWarn(text)
     print(text)
   end
 end
-local user
+local user={}
 function username()
-  return table.unpack({user})
+  return table.unpack(user)
 end
 function setUser(new, pass)
+  if new==nil then user=nil return end
   local h = fs.open(system.dir.."/etc/passwd", "r")
   local userpass = textutils.unserialize(h.readAll())
   h.close()
   salted=blake.digest(pass, new)
   for i=1, #userpass do
-    if userpass[i][1]==user then
+    if userpass[i][1]==new then
       if userpass[i][2]==salted or not userpass[i][2] then
-        user=new
+        user={new, userpass[i][3], userpass[i][4]}
         return true
       else
       	return false
       end
     end
+  end
+end
+
+function parse(...)
+  local params,param=table.pack(...)
+  local args,options={},{}
+  local optDone=false
+  local k,v
+  for i=1, params.n do
+    param=params[i]
+    if not optDone and type(param)=="string" then
+      if param=="--" then
+        optDone=true
+      elseif param:sub(1,2)=="--" then
+        k,v=param:match("%-%-(.-)=(.*)")
+        if not k then
+          k,v=param:sub(3), true
+        end
+        options[k]=v
+      elseif param:sub(1,1)=="-" and #param>1 then
+        for k=2, #param do
+          options[param:sub(k,k)]=true
+        end
+      else
+        table.insert(args, param)
+      end
+    end
+    return args,options
   end
 end

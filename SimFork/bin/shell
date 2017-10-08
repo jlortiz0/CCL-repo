@@ -1,5 +1,5 @@
 local dir = system.dir.."/home/"
-local path = {system.dir.."/bin", system.dir.."/usr/bin/", "/rom/programs/", "/rom/programs/", "/rom/programs/fun", "/rom/programs/rednet"}
+local path = {system.dir.."/bin", system.dir.."/usr/bin/", "/rom/programs/", "/rom/programs/fun", "/rom/programs/rednet"}
 if term.isColour() then
   table.insert(path, "/rom/programs/advanced")
   table.insert(path, "/rom/programs/fun/advanced")
@@ -15,6 +15,9 @@ if pocket then
 end
 if commands then
   table.insert(path, "/rom/programs/command")
+end
+if select(3, system.username())==0 then
+  table.insert(path, system.dir.."/sbin")
 end
 
 local aliases = {
@@ -60,6 +63,7 @@ function newShell.resolveProgram(thing)
     nThing = fs.combine(newShell.resolve(path[i]), thing)
     if fs.exists(nThing) and not fs.isDir(nThing) then return nThing end
   end
+  return nil
 end
 function newShell.dir()
   return dir
@@ -85,7 +89,11 @@ while true do
       for k in cmdHist[#cmdHist]:gmatch("[^ \t]+") do
         table.insert(temp, k)
       end
-      os.run({["shell"]=newShell, ["multishell"]=multishell}, newShell.resolveProgram(temp[1]), table.unpack(temp, 2))
+      if newShell.resolveProgram(temp[1]) then
+        os.run({["shell"]=newShell, ["multishell"]=multishell}, newShell.resolveProgram(temp[1]), table.unpack(temp, 2))
+      else
+        printError("Unknown command: "..table.concat(temp, " "))
+      end
     end
   end)
   if ok then break end

@@ -13,15 +13,12 @@ while true do
   pass=read("*")
   for i=1, #userpass do
     if userpass[i][1]==user then
-      salted=blake.digest(pass, user)
+      salted=blake.digest(pass, ""..user)
       if userpass[i][2]==salted or not userpass[i][2] then
         if system.setUser(user, pass) then
           os.pullEvent=pullold
           shell.run(system.dir.."/"..userpass[i][7])
-          break
         end
-      else
-        break
       end
     end
   end
