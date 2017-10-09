@@ -1,4 +1,7 @@
-local nativefs=fs
+local nativefs={}
+for k,v in pairs(fs) do
+	nativefs[k]=v
+end
 local perms
 local function reload()
   local h=fs.open(system.dir.."/etc/fsperm", "r")
@@ -7,10 +10,13 @@ local function reload()
 end
 reload()
 local function resolvePath(path)
-  local dirs={fs.getName(path)}
+	path=nativefs.combine(path, ".")
+  local dirs={nativefs.getName(path)}
+  if dirs[1]=="root" then dirs={""} end
   while #path>0 do
-    table.insert(dirs, 1, fs.getDir(path))
-    path=fs.getDir(path)
+    table.insert(dirs, 1, nativefs.getName(nativefs.getDir(path)))
+    if dirs[1]==".." then dirs[1]="" end
+    path=nativefs.getDir(path)
   end
   table.remove(dirs, 1)
   local current=perms
@@ -20,10 +26,9 @@ local function resolvePath(path)
   end
   return current
 end
-
-function list(...)
+function fs.list(...)
   local tab=resolvePath(...)
-  if not tab then error("Not a directory", 2) end
+  if not tab then error("Not a directory "..(...), 2) end
   if tonumber(string.sub(tostring(tab[1]),3))>=2 then
     return nativefs.list(...)
   elseif tonumber(string.sub(tostring(tab[1]),2,2))>=2 and select(3, system.username())==tab[3] then
@@ -31,6 +36,103 @@ function list(...)
   elseif tonumber(string.sub(tostring(tab[1]),1,1))>=2 and select(2, system.username())==tab[2] then
     return nativefs.list(...)
   else
-    error("No permission",2)
+    error("Access denied",2)
   end
+end
+function fs.delete(...)
+	local tab=resolvePath(...)
+	if not tab then return end
+  if tonumber(string.sub(tostring(tab[1]),3))%2==1 then
+    return nativefs.delete(...)
+  elseif tonumber(string.sub(tostring(tab[1]),2,2))%2==1 and select(3, system.username())==tab[3] then
+    return nativefs.delete(...)
+  elseif tonumber(string.sub(tostring(tab[1]),1,1))%2==1 and select(2, system.username())==tab[2] then
+    return nativefs.delete(...)
+  else
+    error("Access denied",2)
+  end
+end
+function fs.isReadOnly(...)
+	local tab=resolvePath(...)
+	if not tab then return fs.isReadOnly(fs.getDir(...)) end
+  if tonumber(string.sub(tostring(tab[1]),3))%2==1 then
+    return false
+  elseif tonumber(string.sub(tostring(tab[1]),2,2))%2==1 and select(3, system.username())==tab[3] then
+    return false
+  elseif tonumber(string.sub(tostring(tab[1]),1,1))%2==1 and select(2, system.username())==tab[2] then
+    return false
+  else
+    return true
+  end
+end
+function fs.copy(p1, p2)
+	local tab=resolvePath(p2)
+	if not tab then error("No such file", 2) end
+  if tonumber(string.sub(tostring(tab[1]),3))>=2 or (tonumber(string.sub(tostring(tab[1]),2,2))>=2 and select(3, system.username())==tab[3]) or (tonumber(string.sub(tostring(tab[1]),1,1))>=2 and select(2, system.username())==tab[2]) then
+  	tab=resolvePath(p1)
+  	if tonumber(string.sub(tostring(tab[1]),3))%2==1 then
+    	return nativefs.copy(p1, p2)
+  	elseif tonumber(string.sub(tostring(tab[1]),2,2))%2==1 and select(3, system.username())==tab[3] then
+    	return nativefs.copy(p1, p2)
+  	elseif tonumber(string.sub(tostring(tab[1]),1,1))%2==1 and select(2, system.username())==tab[2] then
+    	return nativefs.copy(p1,p2)
+  	else
+    	error("Access denied", 2)
+  	end
+  else
+    error("Access denied",2)
+  end
+end
+function fs.move(p1, p2)
+	local tab=resolvePath(p2)
+	if not tab then error("No such file", 2) end
+  if tonumber(string.sub(tostring(tab[1]),3))%2==1 or (tonumber(string.sub(tostring(tab[1]),2,2))%2==1 and select(3, system.username())==tab[3]) or (tonumber(string.sub(tostring(tab[1]),1,1))%2==1 and select(2, system.username())==tab[2]) then
+  	tab=resolvePath(p1)
+  	if tonumber(string.sub(tostring(tab[1]),3))%2==1 then
+    	return nativefs.move(p1, p2)
+  	elseif tonumber(string.sub(tostring(tab[1]),2,2))%2==1 and select(3, system.username())==tab[3] then
+    	return nativefs.move(p1, p2)
+  	elseif tonumber(string.sub(tostring(tab[1]),1,1))%2==1 and select(2, system.username())==tab[2] then
+    	return nativefs.move(p1,p2)
+  	else
+    	return fs.copy(p1, p2)
+  	end
+  else
+    error("Access denied",2)
+  end
+end
+function fs.open(path, mode)
+	if not fs.exists(path) and mode:find("r") then error("No such file", 2) end
+	local tab=resolvePath(path)
+	local temppath=path
+	while not tab do
+		temppath=fs.getDir(path)
+		tab=resolvePath(temppath)
+	end
+	if mode=="r" or mode=="rb" then
+		if tonumber(string.sub(tostring(tab[1]),3))>=2 then
+    	return nativefs.open(path, mode)
+  	elseif tonumber(string.sub(tostring(tab[1]),2,2))>=2 and select(3, system.username())==tab[3] then
+    	return nativefs.open(path, mode)
+  	elseif tonumber(string.sub(tostring(tab[1]),1,1))>=2 and select(2, system.username())==tab[2] then
+    	return nativefs.open(path, mode)
+  	else
+    	error("Access denied",2)
+  	end
+	elseif mode=="w" or mode=="a" or mode=="wb" or mode=="ab" then
+		if tonumber(string.sub(tostring(tab[1]),3))%2==1 then
+			if not nativefs.exists(path) then
+
+			end
+    	return nativefs.open(path, mode)
+  	elseif tonumber(string.sub(tostring(tab[1]),2,2))%2==1 and select(3, system.username())==tab[3] then
+    	return nativefs.open(path, mode)
+  	elseif tonumber(string.sub(tostring(tab[1]),1,1))%2==1 and select(2, system.username())==tab[2] then
+    	return nativefs.open(path, mode)
+  	else
+    	error("Access denied", 2)
+  	end
+	else
+		error("Unsupported mode", 2)
+	end
 end

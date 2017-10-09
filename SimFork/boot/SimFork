@@ -33,12 +33,8 @@ function system.specialAPILoad(_sPath, ...)
   _G[sName]=tAPI
   return true
 end
-function system.dummyAPIload(...)
-  os.loadAPI(...)
-  os.unloadAPI(...)
-end
-system.dummyAPIload(system.dir.."/lib/secfs")
 system.specialAPILoad(system.dir.."/lib/process")
+system.specialAPILoad(system.dir.."/lib/secfs")
 --Create some system services processes
 --Also create the UI process(not GUI yet, just UI)
 process.create(system.dir.."/bin/login")

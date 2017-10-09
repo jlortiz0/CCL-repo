@@ -86,7 +86,7 @@ function printWarn(text)
     print(text)
   end
 end
-local user={}
+local user={"root", 0, 0}
 function username()
   return table.unpack(user)
 end
