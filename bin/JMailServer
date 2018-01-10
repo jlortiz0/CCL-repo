@@ -1,39 +1,64 @@
+if ...=="clean" then
+  print("Type YES to delete all JMailServer data.")
+  if string.upper(read())=="YES" then
+    fs.delete("/mail")
+    fs.delete("JMailServer.log")
+    fs.delete("JMailServer.cfg")
+    print("Done.")
+  end
+  return
+end
 if not fs.isDir("/mail/") then fs.makeDir("/mail") end
 fs.open("JMailServer.log", "a").close()
 term.clear()
 term.setCursorPos(1,1)
 print("Loading JMailServer 2.3...")
-local set = {
-  logverbose=false,
-  --Set below to nil to disable admin password
-  adminpass="admin",
-  allownewuser=true,
-  sendmailremote=true,
-  getmailremote=true,
-  --Blacklist and whitelist settings
-  useblist = true,
-  blist = {
-	--The server shouldn't connect to itself.
-	   [os.getComputerID()] = true,
-	 },
-  usewlist = false,
-  wlist = {},
-  --Ban settings, make sure to set useblist to true as well
-  fail2ban = true,
-  banduration = 600,
-  --Number of atempts allowed, set to math.huge to disable.
-  logina = 3,
-  rega = math.huge,
-  --A list of usernames that nobody can use
-  bannedun={
-    guest=true,
-    admin=true,
-    public=true,
-    server=true,
-  },
-  --The below is used internally and should be kept as true
-  run=true,
-}
+local set
+if not fs.exists("JMailServer.cfg") then
+  print("No config found---generating one.")
+ set=fs.open("JMailServer.cfg", "w")
+  set.write("{\
+  --Please log these comments elsewhere, as they may be lost due to the saving system\
+  --Logs all non-erronous, non-suspicious server access\
+  logverbose = false,\
+  --Blacklist settings, enabled but empty by default, overrides Whitelist\
+  blist = {\
+  [ "..os.computerID().." ]=true\
+  },\
+  useblist = true,\
+  --If the server tempbans for failed login attempts\
+  fail2ban = true,\
+  --In seconds\
+  banduration = 600,\
+  --How many login/register attempts a user is allowed\
+  logina = 3,\
+  rega = 5,\
+  --If the server accepts mail from other servers\
+  getmailremote = true,\
+  --A list of usernames nobody is allowed to use\
+  bannedun = {\
+    guest = true,\
+    admin = true,\
+    server = true,\
+    public = true,\
+  },\
+  --Whitelist settings, only allows specified people to connect\
+  usewlist = false,\
+  wlist = {},\
+  --If registration is allowed\
+  allownewuser = true,\
+  --If disabled, the server will not sendmail to remote servers\
+  sendmailremote = true,\
+  --Set below to nil to disable password\
+  adminpass = \"admin\",\
+}")
+ set.close()
+ if ...=="cfgdefault" then return end
+end
+local log = fs.open("JMailServer.cfg", "r")
+set=textutils.unserialize(log.readAll())
+log.close()
+set.run=true
 local connected = {}
 for k in io.lines("JMailServer.log") do
   table.insert(connected, k)
@@ -41,7 +66,7 @@ end
 while #connected>128 do
   table.remove(connected, 1)
 end
-local log = fs.open("JMailServer.log", "w")
+log = fs.open("JMailServer.log", "w")
 log.writeLine(table.concat(connected, "\n"))
 log.flush()
 local function logEvent(t)
@@ -50,6 +75,7 @@ local function logEvent(t)
 end
 logEvent("Starting server...")
 connected={}
+local shelldir=shell.getDir()
 
 local function connect(cid)
   local la, ra = 0, 0
@@ -222,7 +248,7 @@ local function connector(n)
         return
       else
         if set.logverbose then logEvent(id.."'s connect rejected") end
-        rednet.send(id, "System shutting down", "JMail")
+        rednet.send(id, "Server shutting down", "JMail")
       end
     elseif type(msg)=="table" and msg[1]=="SENDMAIL" then
 	     if set.useblist and set.blist[id] then
@@ -306,6 +332,35 @@ local function console()
        os.queueEvent("rednet_message", tonumber(tcmd[2]), "QUIT", "JMail")
      elseif shWords[tcmd[1]] then
        shell.run(table.unpack(tcmd))
+     elseif tcmd[1]=="cfg" then 
+       if (not tcmd[2]) or tcmd[2]=="help" then
+         print("Usage:")
+         print("cfg save")
+         print("cfg reload")
+         print("cfg edit")
+         print("cfg default")
+       elseif tcmd[2]=="edit" then
+         shell.run("edit /JMailServer.cfg")
+       elseif tcmd[2]=="reload" then
+         local h = fs.open("JMailServer.cfg", "r")
+         set=textutils.unserialize(h.readAll())
+         set.run=true
+         set.blist[os.getComputerID()]=true
+         h.close()
+         print("Done!")
+       elseif tcmd[2]=="default" then
+         fs.delete("JMailServer.cfg")
+         shell.run("/"..shell.getRunningProgram().." cfgdefault")
+         os.queueEvent("paste", "cfg reload")
+         os.queueEvent("key", keys.enter)
+       elseif tcmd[2]=="save" then
+         local h=fs.open("JMailServer.cfg", "w")
+         local tm = set.run
+         set.run=nil
+         h.write(textutils.serialize(set))
+         set.run=tm
+         h.close()
+       end
      elseif tcmd[1]=="bl" and tcmd[2] then
        tcmd[2]=tonumber(tcmd[2]) or "nil"
        if tcmd[3] then
@@ -351,4 +406,5 @@ parallel.waitForAll(console, function() connector(true) end)
 logEvent("Server stopped.")
 log.close()
 os.pullEvent=pull
+shell.setDir(shelldir)
 print("Server stopped.")

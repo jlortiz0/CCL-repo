@@ -26,7 +26,32 @@ local sid = tonumber(...)
 if not sid then 
   if ...=="scan" then
     print("Scanning for JMail servers...")
-    sid=rednet.lookup("JMail")
+    sid={rednet.lookup("JMail")}
+    if #sid==0 then
+      printError("Found no servers.")
+      return
+    elseif #sid>1 then
+      local cid = {}
+      for i=1,#sid do
+        rednet.send(sid[i], {
+          sProtocol="JMail",
+          sType="lookup",
+        }, "dns")
+        sid[i]=rednet.receive("dns", 2)
+        if (not sid[i][2]) or not sid[i][2].sHostname then
+          table.remove(sid, i)
+          i=i-1
+        else
+          table.insert(cid, sid[i][1])
+          sid[i]=sid[i][2].sHostname.."(ID "..sid[i][1]..")"
+        end
+      end
+      if #sid==1 then sid=sid[1]
+      else
+        sid=cid[menu(sid, "Found "..#sid.." servers, please select one.\n")]
+      end
+    else side=sid[1]
+    end
   else
     printError("Not a number.") 
     return 
