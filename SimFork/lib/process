@@ -1,14 +1,15 @@
-local list={
+print(...)
+local plist={
   {
     coro=coroutine.running(),
     env=_ENV,
     fr={},
     args={select(2, ...)},
-    path=...
+    path=...,
   },
 }
 local function findProcess(pid)
-  for k,v in pairs(list) do
+  for k,v in pairs(plist) do
     if type(pid)=="number" and k==pid then
       return v
     end
@@ -49,8 +50,8 @@ function create(path, args, env, init, async)
     local pid
     repeat
       pid=math.random(1, 1000)
-    until not list[pid]
-    list[pid]={
+    until not plist[pid]
+    plist[pid]={
       coro=thread,
       parent=findProcess(coroutine.running()),
       env=env,
@@ -58,7 +59,7 @@ function create(path, args, env, init, async)
       r=true,
     }
     if type(path)=="string" then
-      list[pid].path=path
+      plist[pid].path=path
     end
     return pid
   else
@@ -76,26 +77,40 @@ function create(path, args, env, init, async)
 end
 
 function info(pid)
-  pid=list[pid] or findProcess(pid)
+  pid=plist[pid] or findProcess(pid)
   if type(pid)=="number" then
-    pid=list[pid]
+    pid=plist[pid]
   end
   return pid.path, pid.parent, pid.env, pid.args
 end
 
 function close(pid, force)
-  if not list[pid] then
+  if not plist[pid] then
     error("No such process!", 2)
   end
-  if (force and list[pid].coro~=coroutine.running()) or list[pid].r then
-    list[pid]=nil
+  if (force and plist[pid].coro~=coroutine.running()) or plist[pid].r then
+    plist[pid]=nil
     return true
   else
-    coroutine.resume(list[pid].coro, "terminate")
+    coroutine.resume(plist[pid].coro, "terminate")
     sleep(0.1)
-    return (coroutine.status(list[pid].coro)=="dead")
+    return (coroutine.status(plist[pid].coro)=="dead")
   end
   return false
+end
+function list()
+  local final={}
+  for i=1,1000 do
+    if plist[i] then
+      table.insert(final, {
+        pid=i,
+        path=(plist[i].path or "lua function"),
+        args=plist[i].args,
+        parent=plist[i].parent,
+      })
+    end
+  end
+  return final
 end
 
 function run()
@@ -105,19 +120,19 @@ function run()
   while true do
     ed={os.pullEventRaw()}
 	   for i=1, 1000 do
-	     if list[i] and coroutine.status(list[i].coro)=="dead" then
-        if list[i]["fr"][1]==false then
+	     if plist[i] and coroutine.status(plist[i].coro)=="dead" then
+        if plist[i]["fr"][1]==false then
           system.log("Coroutine "..i.." crashed!")
-          if list[i].path then
-            system.log("Path to file: "..list[i].path)
+          if plist[i].path then
+            system.log("Path to file: "..plist[i].path)
           end
-          system.log("Details: "..list[i]["fr"][2])
+          system.log("Details: "..plist[i]["fr"][2])
         end
-	       list[i]=nil
+	       plist[i]=nil
 	     end
 	   end
     i=0
-    for _,v in pairs(list) do
+    for _,v in pairs(plist) do
       i=i+1
       if coroutine.status(v.coro)~="suspended" then
       elseif v.r then

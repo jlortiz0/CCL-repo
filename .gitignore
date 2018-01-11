@@ -6,3 +6,4 @@ SimFork/var/log/*
 >>>>>>> 83878e4... Added the process API
 path/trace
 path/ide
+SimFork/etc/fsperm

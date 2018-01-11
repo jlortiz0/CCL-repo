@@ -63,6 +63,7 @@ function newShell.resolveProgram(thing)
     nThing = fs.combine(newShell.resolve(path[i]), thing)
     if fs.exists(nThing) and not fs.isDir(nThing) then return nThing end
   end
+  if thing:sub(-4)~=".lua" then return newShell.resolveProgram(thing..".lua") end
   return nil
 end
 function newShell.dir()

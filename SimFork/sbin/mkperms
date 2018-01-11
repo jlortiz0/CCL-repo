@@ -5,8 +5,8 @@ function scanFolder(path)
   for _,file in pairs(fs.list(path)) do
     if fs.isDir(fs.combine(path, file)) then
       if options.v then print("Scanning directory "..file) end
-      fat[file]=scanFolder(fs.combine(path,file))
-      if (fs.combine(path,file).."/"):sub( 1, 4)=="rom/" then
+        fat[file]=scanFolder(fs.combine(path,file))
+      if fs.isReadOnly(path) or fs.combine(path,file)=="rom" then
         fat[file][1]=222
       else
         fat[file][1]=322

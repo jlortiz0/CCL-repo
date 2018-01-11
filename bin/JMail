@@ -20,43 +20,49 @@ local function menu(m, p, n)
   end
 end
 
-print("JMail client 2.3 by jlortiz")
-if not ... then print("Usage: JMail <server id> or JMail scan") return end
+print("JMail client 2.4 by jlortiz")
+if not ... then print("Usage: JMail <server id or hostname> or JMail scan") return end
 local sid = tonumber(...)
-if not sid then 
+if not sid then
   if ...=="scan" then
     print("Scanning for JMail servers...")
     sid={rednet.lookup("JMail")}
-    if #sid==0 then
-      printError("Found no servers.")
-      return
-    elseif #sid>1 then
-      local cid = {}
-      for i=1,#sid do
-        rednet.send(sid[i], {
-          sProtocol="JMail",
-          sType="lookup",
-        }, "dns")
-        sid[i]=rednet.receive("dns", 2)
-        if (not sid[i][2]) or not sid[i][2].sHostname then
-          table.remove(sid, i)
-          i=i-1
-        else
-          table.insert(cid, sid[i][1])
-          sid[i]=sid[i][2].sHostname.."(ID "..sid[i][1]..")"
-        end
-      end
-      if #sid==1 then sid=sid[1]
-      else
-        sid=cid[menu(sid, "Found "..#sid.." servers, please select one.\n")]
-      end
-    else side=sid[1]
-    end
   else
-    printError("Not a number.") 
-    return 
+    print("Looking for server "..(...).."...")
+    sid={rednet.lookup("JMail", ...)}
+  end
+  if #sid==0 then
+    printError("Found no servers.")
+    return
+  elseif #sid>=2 then
+    local cid = {}
+    for i=1,#sid do
+      rednet.send(sid[i], {
+        sProtocol="JMail",
+        sType="lookup",
+      }, "dns")
+      sid[i]={rednet.receive("dns", 2)}
+      if (not sid[i][2]) or not sid[i][2].sHostname then
+        table.remove(sid, i)
+        i=i-1
+      else
+        table.insert(cid, sid[i][1])
+        sid[i]=sid[i][2].sHostname.."(ID "..sid[i][1]..")"
+      end
+    end
+    if #sid==1 then sid=sid[1][1]
+    else
+      sid=cid[menu(sid, "Found "..#sid.." servers, please select one.\n")]
+    end
+  else sid=sid[1]
   end
 end
+rednet.send(sid, {
+  sProtocol="JMail",
+  sType="lookup",
+}, "dns")
+local hostname=select(2, rednet.receive("dns", 2)).sHostname
+
 rednet.send(sid, "HELO", "JMail")
 local id, msg = rednet.receive("JMail", 10)
 if sid ~= id or msg ~= "OK connect" then
@@ -76,7 +82,7 @@ end
 
 while true do
   local n = 1
-  n = menu({"Login", "Register", "Disconnect"}, "Connected to "..id.."\n", n)
+  n = menu({"Login", "Register", "Disconnect"}, "Connected to "..hostname.."\n", n)
   if n==3 then rednet.send(sid, "QUIT", "JMail") return
   elseif n==2 then
     rednet.send(sid, "REGA", "JMail")
@@ -119,11 +125,11 @@ while true do
       else
         while true do
           n=1
-          n=menu({"Get Mail","Send Mail", "Exit", "Change Password"},"Logged in as "..un.." on server "..sid.."\n", n)
+          n=menu({"Get Mail","Send Mail", "Exit", "Change Password"},"Logged in as "..un.." on server "..hostname.."\n", n)
           if n==3 then rednet.send(sid, "QUIT", "JMail") return
           elseif n==2 then
             write("Mail Server of Recepient:")
-            local msg={"DATA", tonumber(read())}
+            local msg={"DATA", read()}
             local thing
             write("Recepient username:")
             table.insert(msg, read())
@@ -133,7 +139,7 @@ while true do
             else
               thing = true
             end
-            if thing==true and type(msg[2])=="number" then
+            if thing==true then
               write("Subject:")
               table.insert(msg, read())
               table.insert(msg, "")
@@ -147,8 +153,6 @@ while true do
               print("Sending message...")
               rednet.send(sid, msg, "JMail")
               print(getMsg())
-            elseif type(msg[2])~="number" then
-              print("Not a valid server ID.")
             else
               print("No such user.")
             end

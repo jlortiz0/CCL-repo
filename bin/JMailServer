@@ -12,7 +12,7 @@ if not fs.isDir("/mail/") then fs.makeDir("/mail") end
 fs.open("JMailServer.log", "a").close()
 term.clear()
 term.setCursorPos(1,1)
-print("Loading JMailServer 2.3...")
+print("Loading JMailServer 2.4...")
 local set
 if not fs.exists("JMailServer.cfg") then
   print("No config found---generating one.")
@@ -49,6 +49,8 @@ if not fs.exists("JMailServer.cfg") then
   allownewuser = true,\
   --If disabled, the server will not sendmail to remote servers\
   sendmailremote = true,\
+  --The hostname of the server,for clientside use\
+  hostname=\"mail"..os.computerID().."\",\
   --Set below to nil to disable password\
   adminpass = \"admin\",\
 }")
@@ -75,7 +77,7 @@ local function logEvent(t)
 end
 logEvent("Starting server...")
 connected={}
-local shelldir=shell.getDir()
+local shelldir=shell.dir()
 
 local function connect(cid)
   local la, ra = 0, 0
@@ -102,8 +104,8 @@ local function connect(cid)
           local f = fs.open("/mail/"..msg[2].."/pass", "w")
           f.write(msg[3])
           f.close()
-          f = fs.open("/mail/"..msg[2].."/mail/Welcome from SERVER@"..os.getComputerID(), "w")
-          f.write("Hello "..msg[2]..",\nWelcome to mail server "..os.getComputerID()..".\nWe hope that you will find our services satisfactory.\nRemember, your password is "..msg[3]..".\n\nThanks,\nAdmin")
+          f = fs.open("/mail/"..msg[2].."/mail/Welcome from SERVER@"..set.hostname, "w")
+          f.write("Hello "..msg[2]..",\nWelcome to mail server "..set.hostname..".\nWe hope that you will find our services satisfactory.\nRemember, your password is "..msg[3]..".\n\nThanks,\nAdmin")
           f.close()
           rednet.send(cid, true, "JMail")
         else
@@ -152,10 +154,10 @@ local function connect(cid)
                     f.close()
                     logEvent(cid.." failed to change password of "..un)
                     local i=1
-                    while fs.exists("/mail/"..un.."/mail/Passchange Failiure "..i.." from SERVER@"..os.computerID()) do
+                    while fs.exists("/mail/"..un.."/mail/Passchange Failiure "..i.." from SERVER@"..set.hostname) do
                       i=i+1
                     end
-                    f=fs.open("/mail/"..un.."/mail/Passchange Failure "..i.." from SERVER@"..os.computerID(), "w")
+                    f=fs.open("/mail/"..un.."/mail/Passchange Failure "..i.." from SERVER@"..set.hostname, "w")
                     f.write("On "..os.day().." at "..os.time().." someone unsucessfully attempted to change your password.\n If this was not you, please secure your account.\nThe request was made from computer "..cid.."\nThanks,\nAdmin")
                   else
                     f.close()
@@ -163,10 +165,10 @@ local function connect(cid)
                     f.write(msg[3])
 					               f.close()
                     logEvent(cid.." changed pass for "..un)
-					               while fs.exists("/mail/"..un.."/mail/Passchange "..i.." from SERVER@"..os.computerID()) do
+					               while fs.exists("/mail/"..un.."/mail/Passchange "..i.." from SERVER@"..set.hostname) do
                       i=i+1
                     end
-                    f=fs.open("/mail/"..un.."/mail/Passchange "..i.." from SERVER@"..os.computerID(), "w")
+                    f=fs.open("/mail/"..un.."/mail/Passchange "..i.." from SERVER@"..set.hostname, "w")
                     f.write("On "..os.day().." at "..os.time().." someone changed your password to "..msg[3]..".\n If this was not you, please secure your account.\nThe request was made from computer "..cid.."\nThanks,\nAdmin")
                     rednet.send(cid, true, "JMail")
                   end
@@ -174,7 +176,7 @@ local function connect(cid)
                 elseif msg[1]=="VRFY" and type(msg[2])=="string" then
                   rednet.send(cid, fs.isDir("/mail/"..msg[2]) and msg[2]~="", "JMail")
                 elseif msg[1]=="DATA" and pcall(function() table.concat(msg, " ") end) then
-                  if msg[2]==os.getComputerID() and set.sendmailremote then
+                  if tonumber(msg[2])==os.getComputerID() or msg[2]==set.hostname and set.sendmailremote then
                     if fs.exists("/mail/"..msg[3]) and msg[3]~="" then
                       if fs.exists("/mail/"..msg[3].."/mail/"..msg[4].." from "..un.."@"..os.getComputerID()) then
                         rednet.send(cid, "Pick a different subject.", "JMail")
@@ -189,11 +191,15 @@ local function connect(cid)
                     end
                   else
                     local oldcid = cid
-                    cid = msg[2]
-                    rednet.send(cid, {"SENDMAIL", un, table.unpack(msg,3)},"JMail")
-                    local reply = getMsg()
-                    cid = oldcid
-                    rednet.send(cid, reply, "JMail")
+                    cid = tonumber(msg[2])
+                    if not cid then cid=rednet.lookup("JMail", msg[2]) end
+                    if not cid then rednet.send(oldcid, "Could not find mail server "..msg[2], "JMail")
+                    else
+                      rednet.send(cid, {"SENDMAIL", un, table.unpack(msg,3)},"JMail")
+                      local reply = getMsg()
+                      rednet.send(cid, reply, "JMail")
+                    end
+                    cid=oldcid
                   end
                 else
                   rednet.send(cid, false, "JMail")
@@ -401,7 +407,8 @@ local function console()
 end
 local pull = os.pullEvent
 os.pullEvent=os.pullEventRaw
-rednet.host("JMail", tostring(os.computerID()))
+rednet.host("JMail", set.hostname)
+logEvent("Registered JMail server as "..set.hostname)
 parallel.waitForAll(console, function() connector(true) end)
 logEvent("Server stopped.")
 log.close()

@@ -86,12 +86,13 @@ function printWarn(text)
     print(text)
   end
 end
-local user={"root", 0, 0}
+local user = {}
+--user={"root", 0, 0}
 function username()
   return table.unpack(user)
 end
 function setUser(new, pass)
-  if new==nil then user=nil return end
+  if new==nil then user={} return end
   local h = fs.open(system.dir.."/etc/passwd", "r")
   local userpass = textutils.unserialize(h.readAll())
   h.close()

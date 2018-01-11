@@ -1,3 +1,0 @@
-local tArgs={...}
-if not system then error("Need system API, please run SimFork!") end
-local config=system.getcfg("apt")

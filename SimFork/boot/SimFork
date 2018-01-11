@@ -10,12 +10,13 @@ if not apierr then
 end
 --special API loading function
 function system.specialAPILoad(_sPath, ...)
+  local args={...}
   local sName=fs.getName(_sPath)
   local tEnv = {}
   setmetatable( tEnv, { __index = _ENV } )
   local fnAPI, err = loadfile( _sPath, tEnv )
   if fnAPI then
-    local ok, err = pcall(function(...) fnAPI(...) end)
+    local ok, err = pcall(function() fnAPI(table.unpack(args)) end)
     if not ok then
       printError(err)
       return false
@@ -33,7 +34,7 @@ function system.specialAPILoad(_sPath, ...)
   _G[sName]=tAPI
   return true
 end
-system.specialAPILoad(system.dir.."/lib/process")
+system.specialAPILoad(system.dir.."/lib/process", system.dir.."/boot/SimFork", ...)
 system.specialAPILoad(system.dir.."/lib/secfs")
 --Create some system services processes
 --Also create the UI process(not GUI yet, just UI)
