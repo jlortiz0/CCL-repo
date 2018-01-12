@@ -1,0 +1,6 @@
+local tArgs={...}
+if #tArgs<2 then
+  print("Usage: rcmd <id#> <command> [args]...")
+  return
+end
+rednet.send(tonumber(table.remove(tArgs, 1)), table.concat(tArgs, " "), "rcmd")

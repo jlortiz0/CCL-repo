@@ -1,0 +1,4 @@
+while true do
+  local _,cmd=rednet.receive("rcmd")
+  shell.run(cmd)
+end

@@ -133,7 +133,7 @@ local function connect(cid)
               if set.verbose then logEvent(cid.." disconnected") end
               return
             elseif type(msg)=="table" then
-                if msg[1]=="GET" and type(msg[2])=="string" then
+                if msg[1]=="GET" and type(msg[2])=="string" and type(msg[2]:find("..")~="number") then
                     if fs.isDir("/mail/"..un.."/mail/"..msg[2]) then
                         local reply = {fs.list("/mail/"..un.."/mail/"..msg[2]), {}}
                         for i=1, #reply[1] do
@@ -142,6 +142,7 @@ local function connect(cid)
                         rednet.send(cid, reply, "JMail")
                     else
                         local h = fs.open("/mail/"..un.."/mail/"..msg[2], "r")
+                        if not h then rednet.send(cid, false, "JMail") end
                         rednet.send(cid, h.readAll(), "JMail")
                         h.close()
                     end
@@ -249,7 +250,7 @@ local function connector(n)
         rednet.send(id, "OK connect", "JMail")
         if set.logverbose then logEvent(id.." has connected") end
         connected[id]=true
-        parallel.waitForAny(connector, function() local ok, err = pcall(function() connect(id) end); if not ok then logEvent("Session with "..id.." crashed!") logEvent(err) end connected[id]=false end)
+        parallel.waitForAny(connector, function() local ok, err = pcall(function() connect(id) end); if not ok then logEvent("Session with "..id.." crashed!") logEvent(err) end connected[id]=nil end)
         if n then connector(true) end
         return
       else
@@ -325,8 +326,8 @@ local function console()
        end
 		     print()
    elseif cmd=="connected" then
-     for k,v in pairs(connected) do
-       if v then write(k.." ") end
+     for k in pairs(connected) do
+       write(k.." ")
      end
      print()
    else
@@ -409,7 +410,36 @@ local pull = os.pullEvent
 os.pullEvent=os.pullEventRaw
 rednet.host("JMail", set.hostname)
 logEvent("Registered JMail server as "..set.hostname)
-parallel.waitForAll(console, function() connector(true) end)
+parallel.waitForAll(
+  function()
+    while true do
+      console()
+      print("Press BKSP to return to console, k to kick all clients, or q to abort the shutdown.")
+      local key, i
+      while true do
+        os.startTimer(1)
+        _,key=os.pullEvent()
+        i=0
+        for k in pairs(connected) do
+          i=i+1
+        end
+        if i==0 then return end
+        if key==14 then
+          break
+        elseif key==37 then
+          for k in pairs(connected) do
+            os.queueEvent("rednet_message",k, "QUIT", "JMail")
+          end
+          return
+        elseif key==16 then
+          set.run=true
+          break
+        end
+      end
+    end
+  end, 
+  function() connector(true) end
+)
 logEvent("Server stopped.")
 log.close()
 os.pullEvent=pull
