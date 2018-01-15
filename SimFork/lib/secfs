@@ -12,7 +12,7 @@ reload()
 local function resolvePath(path, op, p2)
 	path=nativefs.combine(path, ".")
   local dirs={nativefs.getName(path)}
-  if dirs[1]=="root" then dirs={""} end
+  if path=="" then dirs={""} end
   while #path>0 do
     table.insert(dirs, 1, nativefs.getName(nativefs.getDir(path)))
     if dirs[1]==".." then dirs[1]="" end
@@ -55,6 +55,9 @@ local function deletePath(path)
 end
 local function makePath(path)
   resolvePath(path, "make")
+end
+local function copyPath(p1, p2)
+  resolvePath(p1, "copy", p2)
 end
 function fs.list(...)
   local tab=resolvePath(...)
@@ -136,7 +139,7 @@ function fs.move(p1, p2)
   deletePath(p1)
 end
 function fs.open(path, mode)
-	if not fs.exists(path) and mode:find("r") then error("No such file", 2) end
+	if not fs.exists(path) and mode:find("r") then return nil, path..": No such file" end
 	local tab=resolvePath(path)
 	local temppath=path
 	while not tab do
@@ -151,7 +154,7 @@ function fs.open(path, mode)
   	elseif tonumber(string.sub(tostring(tab[1]),1,1))>=2 and select(2, system.username())==tab[2] then
     	return nativefs.open(path, mode)
   	else
-    	error("Access denied",2)
+    	return nil, path..": Access denied"
   	end
 	elseif mode=="w" or mode=="a" or mode=="wb" or mode=="ab" then
 		if tonumber(string.sub(tostring(tab[1]),3))%2==1 then
@@ -164,9 +167,14 @@ function fs.open(path, mode)
     if not nativefs.exists(path) then makePath(path) end
     	return nativefs.open(path, mode)
   	else
-    	error("Access denied", 2)
+    return nil, path..": Access denied"
   	end
 	else
 		error("Unsupported mode", 2)
 	end
+end
+function fs.makeDir(path)
+  if fs.exists(path) and not fs.isDir(path) then error("FIle exists", 2) end
+  makePath(path)
+  nativefs.makeDir(dir)
 end

@@ -38,6 +38,7 @@ system.specialAPILoad(system.dir.."/lib/process", system.dir.."/boot/SimFork", .
 system.specialAPILoad(system.dir.."/lib/secfs")
 --Create some system services processes
 --Also create the UI process(not GUI yet, just UI)
+system.setUser()
 process.create(system.dir.."/bin/login")
 process.run()
 --Shutdown procedure

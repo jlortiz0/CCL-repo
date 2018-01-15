@@ -1,0 +1,4 @@
+while true do
+  print("y\ny\ny\ny\ny")
+  sleep(0)
+end

@@ -1,0 +1,18 @@
+print("Ingame: "..textutils.formatTime(os.time()).." on Day "..os.day())
+if tonumber(os.version():match("%d+%.%d+")) then
+  local day = os.day("local")
+  local year=math.floor(day/365.25)+1970
+  day=day%365.25
+  local months={31,28,31,30,31,30,31,31,30,31,30,31}
+  local mc=1
+  for i=1,12 do
+    if day<months[i] then
+      break
+    end
+    day=day-months[i]
+    mc=mc+1
+  end
+  months={"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"}
+  months=months[mc]
+  print("Realtime: "..textutils.formatTime(os.time("local")).." on "..months.." "..day..", "..year)
+end

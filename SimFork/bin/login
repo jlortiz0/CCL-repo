@@ -17,7 +17,9 @@ while true do
       if userpass[i][2]==salted or not userpass[i][2] then
         if system.setUser(user, pass) then
           os.pullEvent=pullold
-          shell.run(system.dir.."/"..userpass[i][7])
+          if not shell.run(system.dir.."/"..userpass[i][7]) then
+            shell.run(userpass[i][7])
+          end
         end
       end
     end

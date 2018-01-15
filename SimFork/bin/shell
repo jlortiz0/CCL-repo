@@ -1,4 +1,5 @@
-local dir = system.dir.."/home/"
+local dir = fs.combine(system.dir.."/home/"..system.username(),"")
+local home=dir..""
 local path = {system.dir.."/bin", system.dir.."/usr/bin/", "/rom/programs/", "/rom/programs/fun", "/rom/programs/rednet"}
 if term.isColour() then
   table.insert(path, "/rom/programs/advanced")
@@ -31,7 +32,7 @@ local aliases = {
 }
 local termColours
 if term.isColour() then
-  termColours = {colours.yellow, colours.white, colours.green}
+  termColours = {colours.yellow, colours.white, colours.yellow}
 else
   termColours = {colours.white, colours.white, colours.grey}
 end
@@ -54,7 +55,10 @@ function newShell.resolveProgram(thing)
     thing=aliases[thing]
   end
   local start = thing:sub(1,1)
-  if start=="/" or start=="\\" then
+  if start=="." then
+    thing=shell.resolve(thing)
+    if fs.exists(thing) and not fs.isDir(thing) then return thing end
+  elseif start=="/" or start=="\\" then
     thing=fs.combine("", thing)
     if fs.exists(thing) and not fs.isDir(thing) then return thing end
   end
@@ -79,21 +83,26 @@ while true do
     term.setBackgroundColour(colours.black)
     term.setTextColour(termColours[1])
     local cmdHist,temp = {},{}
-    print("SimFork Shell (currently just a clone of CraftOS shell)")
+    print("(Crappy) SimFork Shell")
     while true do
       term.setTextColour(termColours[3])
       write(system.username().."@"..(os.computerLabel() or "SimFork"..os.computerID())..":"..dir.."$")
       term.setTextColour(termColours[2])
       table.insert(cmdHist, read(nil, cmdHist))
-      if cmdHist[#cmdHist]=="exit" then return end
-      temp={}
-      for k in cmdHist[#cmdHist]:gmatch("[^ \t]+") do
-        table.insert(temp, k)
-      end
-      if newShell.resolveProgram(temp[1]) then
-        os.run({["shell"]=newShell, ["multishell"]=multishell}, newShell.resolveProgram(temp[1]), table.unpack(temp, 2))
+      if cmdHist[#cmdHist]=="" then
+        table.remove(cmdHist)
       else
-        printError("Unknown command: "..table.concat(temp, " "))
+        if cmdHist[#cmdHist]=="exit" then return end
+        cmdHist[#cmdHist]=cmdHist[#cmdHist]:gsub(" ~", " /"..home)
+        temp={}
+        for k in cmdHist[#cmdHist]:gmatch("[^ \t]+") do
+          table.insert(temp, k)
+        end
+        if newShell.resolveProgram(temp[1]) then
+          os.run({["shell"]=newShell, ["multishell"]=multishell}, newShell.resolveProgram(temp[1]), table.unpack(temp, 2))
+        else
+          printError("Unknown command: "..table.concat(temp, " "))
+        end
       end
     end
   end)
