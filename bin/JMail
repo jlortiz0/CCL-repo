@@ -1,3 +1,28 @@
+if not blake then
+  if fs.exists("/apis/blake") then
+    os.loadAPI("/apis/blake")
+  else
+    print("Couldn't find the blake hashing API.")
+    print("This library is required to log in to the system.")
+    if http then
+      print("Would you like to try to download it? (y/n)")
+      sleep(0.3)
+      if select(2, os.pullEvent("char"))=="y" then
+        if shell.run("pastebin get XRy3LMBG /apis/blake") then
+          print("Done! Please run JMail again.")
+        else
+          print("Couldn't download. If you wish to retry manually, the pastebin id is XRy3LMBG.")
+          print("Download it to /apis/blake")
+        end
+      else
+        print("Okay. If you want to get it yourself, it can be found at pastebin id XRy3LMBG. Download to /apis/blake")
+      end
+    else
+      print("Download pastebin id XRy3LMBG to /apis/blake")
+    end
+    return
+  end
+end
 local function menu(m, p, n)
   n=n or 1
   p=p or ""
@@ -20,7 +45,7 @@ local function menu(m, p, n)
   end
 end
 
-print("JMail client 2.4 by jlortiz")
+print("JMail client 2.5 by jlortiz")
 if not ... then print("Usage: JMail <server id or hostname> or JMail scan") return end
 local sid = tonumber(...)
 if not sid then
@@ -117,9 +142,15 @@ while true do
     if getMsg()==false then
       print("No such user, did you mean to register?")
     else
+      rednet.send(sid, "NONCE", "JMail")
+      local nonce=getMsg()
       write("Password:")
       local ps=read("*")
-      rednet.send(sid, {"AUTH", un, ps}, "JMail")
+      if not nonce then
+        rednet.send(sid, {"AUTH", un, ps}, "JMail")
+      else
+        rednet.send(sid, {"AUTH", un, tostring(blake.digest(ps, nonce)), nonce}, "JMail")
+      end
       if getMsg()==false then
         print("Incorrect login.")
       else

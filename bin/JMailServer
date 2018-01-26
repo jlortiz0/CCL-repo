@@ -8,11 +8,27 @@ if ...=="clean" then
   end
   return
 end
+if not blake then
+  if fs.exists("/apis/blake") then
+    os.loadAPI("/apis/blake")
+  elseif fs.exists("blake") then
+    os.loadAPI("blake")
+  else
+    if not (shell.run("pastebin get XRy3LMBG /apis/blake") or fs.exists("/apis/blake")) then
+      print("Couldn't get blake hashing api")
+      print("It can be found at pastebin id XRy3LMBG")
+      print("Download to /apis/blake")
+    else
+      print("Please restart JMailServer.")
+    end
+    return
+  end
+end
 if not fs.isDir("/mail/") then fs.makeDir("/mail") end
 fs.open("JMailServer.log", "a").close()
 term.clear()
 term.setCursorPos(1,1)
-print("Loading JMailServer 2.4...")
+print("Loading JMailServer 2.5...")
 local set
 if not fs.exists("JMailServer.cfg") then
   print("No config found---generating one.")
@@ -96,6 +112,7 @@ local function connect(cid)
       if set.logverbose then logEvent(cid.." disconnected") end
       return
     elseif msg=="REGA" then rednet.send(cid, set.allownewuser, "JMail")
+    elseif msg=="NONCE" then rednet.send(cid, tostring(math.random()), "JMail")
     elseif type(msg)=="table" then
       if msg[1]=="VRFY" and type(msg[2])=="string" then rednet.send(cid, fs.isDir("/mail/"..msg[2]) and msg[2]~="", "JMail")
       elseif msg[1]=="REG" and set.allownewuser and not set.bannedun[msg[2]] then
@@ -124,7 +141,7 @@ local function connect(cid)
         local f = fs.open("/mail/"..msg[2].."/pass", "r")
         local ps = f.readAll()
         f.close()
-        if ps==msg[3] then
+        if #msg==4 and msg[3]==blake.digest(ps, msg[4]) then
           local un=msg[2]
           rednet.send(cid, true, "JMail")
           while true do
