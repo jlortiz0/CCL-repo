@@ -119,6 +119,9 @@ function run()
   local ed, i
   while true do
     ed={os.pullEventRaw()}
+    if ed[1]=="key" and ed[2]==197 and ed[3] then
+      --If needed, place debug console script here
+    end
 	   for i=1, 1000 do
 	     if plist[i] and coroutine.status(plist[i].coro)=="dead" then
         if plist[i]["fr"][1]==false then
