@@ -16,7 +16,7 @@ function gcd(m,n)
   return n
 end
 local results
-function isPrimitiveRoot(m,n)
+function isPrimitiveRootOld(m,n)
   --Is m a primitive root of n
   results={}
   local r=0
@@ -35,20 +35,30 @@ function isPrimitiveRoot(m,n)
   end
   return true
 end
+
+function iPRFast(m,n)
+  --if n%4~=1 then return isPrimativeRootOld(m,n) end
+  return (m^((n-1)/2)%n)==n-1, tonumber(m^((n-1)/2)%n), m^(n/2)
+end
+
 function getDHPrimes()
-  local p,g=0,0
+  local p,g=0,1
+  local sClock=os.clock()
   while not isPrime(p) do
     p=math.random(1,2^31-1)
   end
-  local i=1
+  local oi=7500
   repeat
-    i=i+1
+    repeat
+      g=g+2
+    until isPrime(g) and g%4==1
     term.clearLine()
     term.setCursorPos(1,select(2,term.getCursorPos()))
-    write(p.." "..i.." ")
-    write(select(2, isPrimitiveRoot(i,p)).." ")
-    write(select(3, isPrimitiveRoot(i,p)))
-    if i%7500==0 then sleep(0) end
-  until isPrimitiveRoot(i, p)
+    write(p.." "..g.." ")
+    write(select(2, iPRFast(g,p)).." ")
+    write(select(3, iPRFast(g,p)))
+    if g>oi then sleep(0) oi=oi+7500 end
+  until iPRFast(g, p)
+  print("And it only took "..(os.clock()-sClock).." seconds!")
   return p,g
 end
