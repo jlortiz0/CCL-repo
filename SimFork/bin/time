@@ -1,5 +1,5 @@
 print("Ingame: "..textutils.formatTime(os.time()).." on Day "..os.day())
-if tonumber(os.version():match("%d+%.%d+")) then
+if tonumber(os.version():match("%d+%.%d+"))>1.7 then
   local day = os.day("local")
   local year=math.floor(day/365.25)+1970
   day=day%365.25

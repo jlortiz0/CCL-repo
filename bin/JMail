@@ -45,7 +45,7 @@ local function menu(m, p, n)
   end
 end
 
-print("JMail client 2.5 by jlortiz")
+print("JMail client 2.6 by jlortiz")
 if not ... then print("Usage: JMail <server id or hostname> or JMail scan") return end
 local sid = tonumber(...)
 if not sid then
@@ -93,6 +93,13 @@ local id, msg = rednet.receive("JMail", 10)
 if sid ~= id or msg ~= "OK connect" then
   print("Could not connect.")
   if type(msg)=="string" then print("Server error: "..msg) end
+  if msg=="Already connected" then
+   print("Do you want to force the connection? (y/n)")
+   if select(2, os.pullEvent("char"))=="y" then
+     rednet.send(sid, "QUIT", "JMail")
+     print("Please run JMail "..sid)
+   end
+  end
   return
 end
 local getMsg = function()
@@ -100,7 +107,7 @@ local getMsg = function()
   if id ~= sid and id then return getMsg()
   elseif not id then error("Lost connection!", 0)
   elseif id==sid and type(msg)=="table" and msg[1]=="QUIT" then 
-  error("Server unexpectedly closed connection.\nReason:"..msg[2], 0)
+    error("Server unexpectedly closed connection.\nReason:"..msg[2], 0)
   else return msg
   end
 end
@@ -146,11 +153,7 @@ while true do
       local nonce=getMsg()
       write("Password:")
       local ps=read("*")
-      if not nonce then
-        rednet.send(sid, {"AUTH", un, ps}, "JMail")
-      else
-        rednet.send(sid, {"AUTH", un, tostring(blake.digest(ps, nonce)), nonce}, "JMail")
-      end
+      rednet.send(sid, {"AUTH", un, tostring(blake.digest(ps, nonce)), nonce}, "JMail")
       if getMsg()==false then
         print("Incorrect login.")
       else
@@ -159,34 +162,68 @@ while true do
           n=menu({"Get Mail","Send Mail", "Exit", "Change Password"},"Logged in as "..un.." on server "..hostname.."\n", n)
           if n==3 then rednet.send(sid, "QUIT", "JMail") return
           elseif n==2 then
-            write("Mail Server of Recepient:")
-            local msg={"DATA", read()}
-            local thing
-            write("Recepient username:")
-            table.insert(msg, read())
-            if msg[2]==sid then
-              rednet.send(sid, {"VRFY", msg[3]}, "JMail")
-              thing = getMsg()
+            local msg={"DATA"}
+            if tonumber(os.version():match("%d.%d"))>1.7 then
+              local day = os.day("utc")
+        			  	local year=math.floor(day/365.25)+1970
+        						day=day%365.25
+        						local months={31,28,31,30,31,30,31,31,30,31,30,31}
+        						local mc=1
+        						for i=1,12 do
+          						if day<months[i] then
+            						break
+          						end
+          						day=day-months[i]
+          						mc=mc+1
+        						end
+        						months={"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}
+        						months=months[mc]
+        						table.insert(msg, day.." "..months.." "..year.." "..textutils.formatTime(os.time("utc"), true).." GMT")
             else
-              thing = true
+              table.insert(msg, textutils.formatTime(os.time(), true).." on day "..os.day())
             end
-            if thing==true then
-              write("Subject:")
-              table.insert(msg, read())
-              table.insert(msg, "")
-              print("Body, up to 10 lines")
-              print("Type 'END' on a blank line to end message.")
-              for i=1, 10 do
-                local txt=read()
-                if txt=="END" then break end
-                msg[5]=(msg[5] or "")..txt.."\n"
+            term.clear()
+            term.setCursorPos(1,1)
+            print("Date: "..msg[2])
+            table.insert(msg, un.."@"..hostname)
+            print("From: "..msg[3])
+            print("//To send to multiple people, separate email addresses with spaces")
+            write("To: ")
+            local recpts=read()
+            table.insert(msg, {})
+            if string.find(recpts, " ") then
+              for w in string.gmatch(recpts, "[^ \t]+") do
+                table.insert(msg[4], w)
               end
-              print("Sending message...")
-              rednet.send(sid, msg, "JMail")
-              print(getMsg())
             else
-              print("No such user.")
+              msg[4][1]=recpts
             end
+            write("Subject:")
+            table.insert(msg, read())
+            local done,tempMsg,out=false
+            repeat
+              print("You will now be send to EDIT to type a message.")
+              print("Press enter to proceed")
+              os.pullEvent("key_up")
+              os.pullEvent("key")
+              fs.open(".JMailMessage", "a").close()
+              shell.run("/rom/programs/edit /.JMailMessage")
+              tempMsg=fs.open(".JMailMessage", "r")
+              out=tempMsg.readAll()
+              tempMsg.close()
+              if #out<3 then
+                print("The file seems to be blank. Did you remember to save?")
+              end
+              print(out)
+              print("\nIs this good? (y/n)")
+              if select(2, os.pullEvent("char"))=="y" then
+                done=true
+                table.insert(msg, out)
+                fs.delete(".JMailMessage")
+              end
+            until done
+            print("Message sent.")
+            rednet.send(sid, msg, "JMail")
             sleep(2.5)
           elseif n==1 then
               n=1
@@ -219,12 +256,59 @@ while true do
                       path = fs.combine(path, ls[1][n])
                   else
                       rednet.send(sid, {"GET", fs.combine(path, ls[1][n])}, "JMail")
-                      local m=menu({"Delete", "Move", "Keep"}, getMsg().."\n", 3)
+                      local thing=textutils.unserialize(getMsg())
+                      print(textutils.serialize(thing))
+                      local thin="Date: "..thing[1].."\nFrom: "..thing[2].."\nTo: "..table.concat(thing[3], ", ").."\nSubject: "..thing[4].."\n\n"..thing[5]
+                      local m=menu({"Delete", "Move", "Reply", "Keep"}, thin.."\n\n", 4)
                       if m==1 then
                           rednet.send(sid, {"DEL", fs.combine(path, ls[1][n])}, "JMail")
                       elseif m==2 then
                           print("Folder to move to:")
                           rednet.send(sid, {"MV", fs.combine(path, ls[1][n]), fs.combine(path, read()).."/"..ls[1][n]}, "JMail")
+                      elseif m==3 then
+                        if #thing[3]>1 then
+                          m=menu({"Cancel", "Reply All", "Reply"}, thin.."\n\n", 3)
+                        end
+                        local done, f, tmp
+                        while not done do
+                          fs.open(".JMailServer", "a").close()
+                          shell.run("edit /.JMailServer")
+                          f=fs.open(".JMailServer", "r")
+                          tmp=f.readAll()
+                          f.close()
+                          if #tmp<3 then
+                            print("Did you forget to save?")
+                          end
+                          print(tmp)
+                          print("\nIs this good(y/n)")
+                          if select(2, os.pullEvent("char"))=="y" then
+                            done=true
+                            fs.delete(".JMailServer")
+                            if m==3 then thing[3]={thing[2]} end
+                            if tonumber(os.version():match("%d.%d"))>1.7 then
+                        					 local day = os.day("utc")
+                      			  			local year=math.floor(day/365.25)+1970
+                          				day=day%365.25
+                        						local months={31,28,31,30,31,30,31,31,30,31,30,31}
+                        						local mc=1
+                        						for i=1,12 do
+                          						if day<months[i] then
+                            						break
+                            				end
+                          						day=day-months[i]
+                          						mc=mc+1
+                        						end
+                        						months={"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}
+                        						months=months[mc]
+                        						f=day.." "..months.." "..year.." "..textutils.formatTime(os.time("utc"), true).." GMT"
+                        				else
+                     	   			  f=textutils.formatTime(os.time(), true).." on day "..os.day()
+                       					end
+                            rednet.send(sid, {"DATA", {f, un.."@"..hostname, thing[3], "Re:"..thing[4], tmp}})
+                            print("Mail sent!")
+                            sleep(2.5)
+                          end
+                        end
                       end
                   end
                end
