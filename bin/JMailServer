@@ -28,7 +28,6 @@ if not fs.isDir("/mail/send") then fs.makeDir("/mail/send") end
 fs.open("JMailServer.log", "a").close()
 term.clear()
 term.setCursorPos(1,1)
-print("Loading JMailServer 2.5...")
 local set
 if not fs.exists("JMailServer.cfg") then
   print("No config found---generating one.")
@@ -76,6 +75,8 @@ end
 local log = fs.open("JMailServer.cfg", "r")
 set=textutils.unserialize(log.readAll())
 log.close()
+set.version=tonumber("2.6")
+print("Loading JMailServer "..set.version.."...")
 set.run=true
 local connected = {}
 for k in io.lines("JMailServer.log") do
@@ -91,7 +92,7 @@ local function logEvent(t)
   log.writeLine("["..os.day().."/"..os.time().."] "..t)
   log.flush()
 end
-logEvent("Starting server...")
+logEvent("Loading JMailServer "..set.version.."...")
 connected={}
 local shelldir=shell.dir()
 
@@ -122,15 +123,7 @@ local function connect(cid)
         f.write(msg[3])
         f.close()
         f = fs.open("/mail/"..msg[2].."/mail/Welcome from SERVER@"..set.hostname, "w")
-        f.write("{\
-        \"No date\",\
-        \"SERVER@"..set.hostname",\
-        {\
-        \""..msg[2].."@"..set.hostname.."\",\
-        },\
-        \"Welcome\",\
-        Hello "..msg[2]..",\nWelcome to mail server "..set.hostname..".\nWe hope that you will find our services satisfactory.\nRemember, your password is "..msg[3]..".\n\nThanks,\nAdmin,\
-        }")
+        f.write(textutils.serialize({"No date", "SERVER@"..set.hostname, {msg[2].."@"..set.hostname}, "Welcome!", "Hello and welcome to this server. At the time of writing, we are running JMail version "..set.version..". Don't worry, your password is hashed and salted with SHA-3.\n\nTHIS IS AN AUTOMATED MESSAGE, DO NOT REPLY."}))
         f.close()
         rednet.send(cid, true, "JMail")
       else
@@ -149,7 +142,7 @@ local function connect(cid)
       local f = fs.open("/mail/"..msg[2].."/pass", "r")
       local ps = f.readAll()
       f.close()
-      if tostring(msg[3])==tostring(blake.digest(ps, msg[4])) then
+      if msg[3]==blake.digest(ps, msg[4]):toHex() then
         local un=msg[2]
       rednet.send(cid, true, "JMail")
       while true do
@@ -175,30 +168,30 @@ local function connect(cid)
           elseif msg[1]=="MV" and not (string.find(msg[2], "../") or string.find(msg[3], "../")) then fs.move("/mail/"..un.."/mail/"..msg[2], "/mail/"..un.."/mail/"..msg[3])
           elseif msg[1]=="PC" then
             local f = fs.open("/mail/"..un.."/pass", "r")
-            if f.readAll() ~= msg[2] then 
-            rednet.send(cid, false, "JMail")
-            f.close()
-            logEvent(cid.." failed to change password of "..un)
             local i=1
-            while fs.exists("/mail/"..un.."/mail/Passchange Failiure "..i.." from SERVER@"..set.hostname) do
-              i=i+1
+            if f.readAll() ~= msg[2] then 
+              rednet.send(cid, false, "JMail")
+              f.close()
+              logEvent(cid.." failed to change password of "..un)
+              while fs.exists("/mail/"..un.."/mail/Passchange Failiure "..i.." from SERVER@"..set.hostname) do
+                i=i+1
+              end
+              f=fs.open("/mail/"..un.."/mail/Passchange Failure "..i.." from SERVER@"..set.hostname, "w")
+              f.write(textutils.serialize({"Now","SERVER@"..set.hostname,{un.."@"..set.hostname},"Passchange FAILIURE","On "..os.day().." at "..os.time().." someone unsucessfully attempted to change your password.\nIf this was not you, please secure your account.\nThe request was made from computer "..cid.."\nThanks,\nAdmin"}))
+            else
+              f.close()
+              f=fs.open("/mail/"..un.."/pass", "w")
+              f.write(msg[3])
+              f.close()
+              logEvent(cid.." changed pass for "..un)
+              while fs.exists("/mail/"..un.."/mail/Passchange "..i.." from SERVER@"..set.hostname) do
+                i=i+1
+              end
+              f=fs.open("/mail/"..un.."/mail/Passchange "..i.." from SERVER@"..set.hostname, "w")
+              f.write(textutils.serialize({"Now","SERVER@"..set.hostname,{un.."@"..set.hostname},"Passchange notice","On "..os.day().." at "..os.time().." someone changed your password to .\nIf this was not you, please secure your account.\nThe request was made from computer "..cid.."\nThanks,\nAdmin"}))
+              rednet.send(cid, true, "JMail")
             end
-            f=fs.open("/mail/"..un.."/mail/Passchange Failure "..i.." from SERVER@"..set.hostname, "w")
-            f.write("On "..os.day().." at "..os.time().." someone unsucessfully attempted to change your password.\n If this was not you, please secure your account.\nThe request was made from computer "..cid.."\nThanks,\nAdmin")
-          else
             f.close()
-            f=fs.open("/mail/"..un.."/pass", "w")
-            f.write(msg[3])
-               f.close()
-            logEvent(cid.." changed pass for "..un)
-               while fs.exists("/mail/"..un.."/mail/Passchange "..i.." from SERVER@"..set.hostname) do
-              i=i+1
-            end
-            f=fs.open("/mail/"..un.."/mail/Passchange "..i.." from SERVER@"..set.hostname, "w")
-            f.write("On "..os.day().." at "..os.time().." someone changed your password to "..msg[3]..".\n If this was not you, please secure your account.\nThe request was made from computer "..cid.."\nThanks,\nAdmin")
-            rednet.send(cid, true, "JMail")
-          end
-          f.close()
         elseif msg[1]=="VRFY" and type(msg[2])=="string" then
           rednet.send(cid, fs.isDir("/mail/"..msg[2].."/pass"), "JMail")
         elseif msg[1]=="DATA" and pcall(function() textutils.serialize(msg) end) then
@@ -417,7 +410,7 @@ local function sendmail()
   local ls, f, tab, cache
   while true do
     repeat
-      sleep(10)
+      sleep(30)
       ls=fs.list("/mail/send")
     until #ls>0
     cache={rednet.lookup("JMail")}
@@ -427,7 +420,6 @@ local function sendmail()
       f.close()
       fs.delete("/mail/send/"..ls[i])
       for n=1, #tab[3] do
-        print(tab[3][n])
         if string.find(tab[3][n], "@") then
           local srv=string.gmatch(tab[3][n], "[^ @]+")
           local un=srv()
@@ -480,7 +472,7 @@ local function sendmail()
             a=math.random(1000)
           end
           f=fs.open("/mail/send/"..a, "w")
-          f.write(textutils.serialize({tab[1], "sendmail@"..set,hostname, {tab[2]}, "Mailer error: Bad address", "The email address "..tab[3][n].." is invalid."}))
+          f.write(textutils.serialize({tab[1], "sendmail@"..set.hostname, {tab[2]}, "Mailer error: Bad address", "The email address "..tab[3][n].." is invalid."}))
           f.close()
         end
       end

@@ -133,9 +133,9 @@ while true do
         if read("*") ~= ps then
           print("Passwords do not match.")
         else
-          rednet.send(sid, {"REG", un, ps}, "JMail")
+          rednet.send(sid, {"REG", un, blake.digest(ps,un):toHex()}, "JMail")
           if getMsg() == true then
-            print("Success.")
+            print("Success. Please log in with your new account.")
           else
             print("Registration failed...")
           end
@@ -152,8 +152,8 @@ while true do
       rednet.send(sid, "NONCE", "JMail")
       local nonce=getMsg()
       write("Password:")
-      local ps=read("*")
-      rednet.send(sid, {"AUTH", un, tostring(blake.digest(ps, nonce)), nonce}, "JMail")
+      local ps=blake.digest(read("*"), un):toHex()
+      rednet.send(sid, {"AUTH", un, blake.digest(ps, nonce):toHex(), nonce}, "JMail")
       if getMsg()==false then
         print("Incorrect login.")
       else
@@ -188,42 +188,45 @@ while true do
             table.insert(msg, un.."@"..hostname)
             print("From: "..msg[3])
             print("//To send to multiple people, separate email addresses with spaces")
+            print("//Enter nothing to cancel")
             write("To: ")
             local recpts=read()
-            table.insert(msg, {})
-            if string.find(recpts, " ") then
-              for w in string.gmatch(recpts, "[^ \t]+") do
-                table.insert(msg[4], w)
+            if recpts then
+              table.insert(msg, {})
+              if string.find(recpts, " ") then
+                for w in string.gmatch(recpts, "[^ \t]+") do
+                  table.insert(msg[4], w)
+                end
+              else
+                msg[4][1]=recpts
               end
-            else
-              msg[4][1]=recpts
+              write("Subject: ")
+              table.insert(msg, read())
+              local done,tempMsg,out=false
+              repeat
+                print("You will now be send to EDIT to type a message.")
+                print("Press enter to proceed")
+                os.pullEvent("key_up")
+                os.pullEvent("key")
+                fs.open(".JMailMessage", "a").close()
+                shell.run("/rom/programs/edit /.JMailMessage")
+                tempMsg=fs.open(".JMailMessage", "r")
+                out=tempMsg.readAll()
+                tempMsg.close()
+                if #out<3 then
+                  out="The file seems to be blank. Did you remember to save?"
+                end
+                print(out)
+                print("\nIs this good? (y/n)")
+                if select(2, os.pullEvent("char"))=="y" then
+                  done=true
+                  table.insert(msg, out)
+                  fs.delete(".JMailMessage")
+                end
+              until done
+              print("Message sent.")
+              rednet.send(sid, msg, "JMail")
             end
-            write("Subject:")
-            table.insert(msg, read())
-            local done,tempMsg,out=false
-            repeat
-              print("You will now be send to EDIT to type a message.")
-              print("Press enter to proceed")
-              os.pullEvent("key_up")
-              os.pullEvent("key")
-              fs.open(".JMailMessage", "a").close()
-              shell.run("/rom/programs/edit /.JMailMessage")
-              tempMsg=fs.open(".JMailMessage", "r")
-              out=tempMsg.readAll()
-              tempMsg.close()
-              if #out<3 then
-                print("The file seems to be blank. Did you remember to save?")
-              end
-              print(out)
-              print("\nIs this good? (y/n)")
-              if select(2, os.pullEvent("char"))=="y" then
-                done=true
-                table.insert(msg, out)
-                fs.delete(".JMailMessage")
-              end
-            until done
-            print("Message sent.")
-            rednet.send(sid, msg, "JMail")
             sleep(2.5)
           elseif n==1 then
               n=1
@@ -304,7 +307,8 @@ while true do
                         				else
                      	   			  f=textutils.formatTime(os.time(), true).." on day "..os.day()
                        					end
-                            rednet.send(sid, {"DATA", {f, un.."@"..hostname, thing[3], "Re:"..thing[4], tmp}})
+                            print(f, un.."@"..hostname, thing[3], "Re:"..thing[4])
+                            rednet.send(sid, {"DATA", {f, un.."@"..hostname, thing[3], "Re:"..thing[4], tmp}}, "JMail")
                             print("Mail sent!")
                             sleep(2.5)
                           end
@@ -320,7 +324,7 @@ while true do
             local nps = read("*")
             write("Confirm:")
             if read("*") == nps then
-              rednet.send(sid, {"PC", ops, nps}, "JMail")
+              rednet.send(sid, {"PC", blake.digest(ops,un):toHex(), blake.digest(nps, un):toHex()}, "JMail")
               if getMsg() then
                 print("Success.")
               else
@@ -335,5 +339,5 @@ while true do
       end
     end
   end
-  sleep(2.5)
+  sleep(2)
 end
