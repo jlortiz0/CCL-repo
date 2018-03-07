@@ -185,20 +185,18 @@ while true do
             term.clear()
             term.setCursorPos(1,1)
             print("Date: "..msg[2])
-            table.insert(msg, un.."@"..hostname)
-            print("From: "..msg[3])
-            print("//To send to multiple people, separate email addresses with spaces")
-            print("//Enter nothing to cancel")
+            print("To send to multiple people, separate email addresses with spaces")
+            print("Enter nothing to cancel")
             write("To: ")
             local recpts=read()
             if recpts then
               table.insert(msg, {})
               if string.find(recpts, " ") then
                 for w in string.gmatch(recpts, "[^ \t]+") do
-                  table.insert(msg[4], w)
+                  table.insert(msg[3], w)
                 end
               else
-                msg[4][1]=recpts
+                msg[3][1]=recpts
               end
               write("Subject: ")
               table.insert(msg, read())
