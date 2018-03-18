@@ -1,23 +1,30 @@
 local tArgs={...}
-if #tArgs < 1 then
-printError("Usage: cat <file>")
-return
+  if #tArgs < 1 then
+    printError("Usage: cat <file>")
+  return
 end
 local file=shell.resolve(tArgs[1])
 if fs.exists(file) then
-if not fs.isDir(file) then
-file=io.open(file)
-local line=file:read()
-local lines=0
-local w,h = term.getSize()
-while line do
-lines=lines+textutils.pagedPrint(line, (h-3)-lines)
-line=file:read()
-end
-file:close()
+  if not fs.isDir(file) then
+    file=io.open(file)
+    local line=file:read()
+    local lines=0
+    local _,h = term.getSize()
+    while line do
+      lines=lines+print(line)
+      if lines>h-3 then
+        write("Press enter to continue...")
+        os.pullEvent("key")
+        lines=0
+        term.clear()
+        term.setCursorPos(1, 1)
+      end
+      line=file:read()
+    end
+    file:close()
+  else
+    printError("Cannot cat a directory.")
+  end
 else
-printError("Cannot cat a directory.")
-end
-else
-printError("File does not exist.")
+  printError("File does not exist.")
 end

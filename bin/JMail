@@ -45,7 +45,7 @@ local function menu(m, p, n)
   end
 end
 
-print("JMail client 2.6 by jlortiz")
+print("JMail client 2.8 by jlortiz")
 if not ... then print("Usage: JMail <server id or hostname> or JMail scan") return end
 local sid = tonumber(...)
 if not sid then
@@ -86,10 +86,11 @@ rednet.send(sid, {
   sProtocol="JMail",
   sType="lookup",
 }, "dns")
-local hostname=select(2, rednet.receive("dns", 2)).sHostname
+local hostname
+if not pcall(function() hostname=select(2, rednet.receive("dns", 2)).sHostname end) then printError("Could not connect") return end
 
 rednet.send(sid, "HELO", "JMail")
-local id, msg = rednet.receive("JMail", 10)
+local id, msg = rednet.receive("JMail", 5)
 if sid ~= id or msg ~= "OK connect" then
   print("Could not connect.")
   if type(msg)=="string" then print("Server error: "..msg) end
@@ -97,7 +98,7 @@ if sid ~= id or msg ~= "OK connect" then
    print("Do you want to force the connection? (y/n)")
    if select(2, os.pullEvent("char"))=="y" then
      rednet.send(sid, "QUIT", "JMail")
-     print("Please run JMail "..sid)
+     shell.run("/"..shell.getRunningProgram(), ...)
    end
   end
   return
@@ -153,7 +154,7 @@ while true do
       local nonce=getMsg()
       write("Password:")
       local ps=blake.digest(read("*"), un):toHex()
-      rednet.send(sid, {"AUTH", un, blake.digest(ps, nonce):toHex(), nonce}, "JMail")
+      rednet.send(sid, {"AUTH", un, blake.digest(ps, nonce):toHex()}, "JMail")
       if getMsg()==false then
         print("Incorrect login.")
       else
@@ -163,40 +164,20 @@ while true do
           if n==3 then rednet.send(sid, "QUIT", "JMail") return
           elseif n==2 then
             local msg={"DATA"}
-            if tonumber(os.version():match("%d.%d"))>1.7 then
-              local day = os.day("utc")
-        			  	local year=math.floor(day/365.25)+1970
-        						day=day%365.25
-        						local months={31,28,31,30,31,30,31,31,30,31,30,31}
-        						local mc=1
-        						for i=1,12 do
-          						if day<months[i] then
-            						break
-          						end
-          						day=day-months[i]
-          						mc=mc+1
-        						end
-        						months={"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}
-        						months=months[mc]
-        						table.insert(msg, day.." "..months.." "..year.." "..textutils.formatTime(os.time("utc"), true).." GMT")
-            else
-              table.insert(msg, textutils.formatTime(os.time(), true).." on day "..os.day())
-            end
             term.clear()
             term.setCursorPos(1,1)
-            print("Date: "..msg[2])
             print("To send to multiple people, separate email addresses with spaces")
             print("Enter nothing to cancel")
             write("To: ")
             local recpts=read()
-            if recpts then
+            if #recpts>2 then
               table.insert(msg, {})
               if string.find(recpts, " ") then
                 for w in string.gmatch(recpts, "[^ \t]+") do
-                  table.insert(msg[3], w)
+                  table.insert(msg[2], w)
                 end
               else
-                msg[3][1]=recpts
+                msg[2][1]=recpts
               end
               write("Subject: ")
               table.insert(msg, read())
@@ -286,27 +267,7 @@ while true do
                             done=true
                             fs.delete(".JMailServer")
                             if m==3 then thing[3]={thing[2]} end
-                            if tonumber(os.version():match("%d.%d"))>1.7 then
-                        					 local day = os.day("utc")
-                      			  			local year=math.floor(day/365.25)+1970
-                          				day=day%365.25
-                        						local months={31,28,31,30,31,30,31,31,30,31,30,31}
-                        						local mc=1
-                        						for i=1,12 do
-                          						if day<months[i] then
-                            						break
-                            				end
-                          						day=day-months[i]
-                          						mc=mc+1
-                        						end
-                        						months={"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}
-                        						months=months[mc]
-                        						f=day.." "..months.." "..year.." "..textutils.formatTime(os.time("utc"), true).." GMT"
-                        				else
-                     	   			  f=textutils.formatTime(os.time(), true).." on day "..os.day()
-                       					end
-                            print(f, un.."@"..hostname, thing[3], "Re:"..thing[4])
-                            rednet.send(sid, {"DATA", {f, un.."@"..hostname, thing[3], "Re:"..thing[4], tmp}}, "JMail")
+                            rednet.send(sid, {"DATA", thing[3], "Re: "..thing[4], tmp}, "JMail")
                             print("Mail sent!")
                             sleep(2.5)
                           end

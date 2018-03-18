@@ -1,9 +1,6 @@
-<<<<<<< HEAD
-/SimOS/SimOS.log
-=======
-/SimOS/SimOS.log
 SimFork/var/log/*
->>>>>>> 83878e4... Added the process API
 path/trace
 path/ide
 SimFork/etc/fsperm
+apis/dh
+apis/blake

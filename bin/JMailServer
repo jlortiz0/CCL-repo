@@ -71,6 +71,10 @@ if not fs.exists("JMailServer.cfg") then
   adminpass = \"admin\",\
   --Should we automatically kick on shutdown?\
   shkick = true,\
+  --Maximum size of a users inbox in bytes, set to 0 to disabkle\
+  maxsize = 50000,\
+  --Max lines in the log file, set to 0 to disable logs\
+  logmax=50,\
 }")
  set.close()
  if ...=="cfgdefault" then return end
@@ -78,26 +82,66 @@ end
 local log = fs.open("JMailServer.cfg", "r")
 set=textutils.unserialize(log.readAll())
 log.close()
-set.version=tonumber("2.6")
+set.version=tonumber("2.8")
 print("Loading JMailServer "..set.version.."...")
 set.run=true
 local connected = {}
-for k in io.lines("JMailServer.log") do
-  table.insert(connected, k)
-end
-while #connected>128 do
-  table.remove(connected, 1)
-end
-log = fs.open("JMailServer.log", "w")
-log.writeLine(table.concat(connected, "\n"))
-log.flush()
-local function logEvent(t)
-  log.writeLine("["..os.day().."/"..os.time().."] "..t)
+if set.logmax>1 then 
+  for k in io.lines("JMailServer.log") do
+    table.insert(connected, k)
+  end
+  while #connected>set.logmax do
+    table.remove(connected, 1)
+  end
+  log = fs.open("JMailServer.log", "w")
+  log.writeLine(table.concat(connected, "\n"))
   log.flush()
+  connected={}
+else
+	fs.delete("JMailServer.log")
+end
+local function getSize(path)
+  if fs.isDir(path) then
+    local k=0
+    local l = fs.list(path)
+    for i=1, #l do
+      k=k+getSize(fs.combine(path, l[i]))
+    end
+    return k
+  end
+  return fs.getSize(path)
+end
+local function getDate()
+  if tonumber(os.version():match("%d.%d"))>1.7 then
+    local day = os.day("utc")
+    local year=math.floor(day/365.25)+1970
+    day=day%365.25
+    local months={31,28,31,30,31,30,31,31,30,31,30,31}
+    local mc=1
+    for i=1,12 do
+      if day<months[i] then
+        break
+      end
+      day=day-months[i]
+      mc=mc+1
+    end
+    months={"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}
+    months=months[mc]
+    return (day.." "..months.." "..year.." "..textutils.formatTime(os.time("utc"), true).." GMT")
+  else
+    return (textutils.formatTime(os.time(), true).." on day "..os.day())
+   end
+end
+local logEvent
+if set.logmax>1 then
+  logEvent = function(t)
+  	log.writeLine("["..getDate().."] "..t)
+  	log.flush()
+  end
+else
+  logEvent=function() end
 end
 logEvent("Loading JMailServer "..set.version.."...")
-connected={}
-local shelldir=shell.dir()
 
 local function connect(cid)
   local la, ra = 0, 0
@@ -116,7 +160,9 @@ local function connect(cid)
       if set.logverbose then logEvent(cid.." disconnected") end
       return
     elseif msg=="REGA" then rednet.send(cid, set.allownewuser, "JMail")
-    elseif msg=="NONCE" then rednet.send(cid, tostring(math.random()), "JMail")
+    elseif msg=="NONCE" then 
+      connected[cid]=tostring(math.random())
+      rednet.send(cid, connected[cid], "JMail")
     elseif type(msg)=="table" then
       if msg[1]=="VRFY" and type(msg[2])=="string" then rednet.send(cid, fs.exists("/mail/"..msg[2].."/pass"), "JMail")
     elseif msg[1]=="REG" and set.allownewuser and not set.bannedun[msg[2]] then
@@ -126,7 +172,7 @@ local function connect(cid)
         f.write(msg[3])
         f.close()
         f = fs.open("/mail/"..msg[2].."/mail/Welcome from SERVER@"..set.hostname, "w")
-        f.write(textutils.serialize({"No date", "SERVER@"..set.hostname, {msg[2].."@"..set.hostname}, "Welcome!", "Hello and welcome to this server. At the time of writing, we are running JMail version "..set.version..". Don't worry, your password is hashed and salted with SHA-3.\n\nTHIS IS AN AUTOMATED MESSAGE, DO NOT REPLY."}))
+        f.write(textutils.serialize({getDate(),"SERVER@"..set.hostname, {msg[2].."@"..set.hostname}, "Welcome!", "Hello and welcome to this server. At the time of writing, we are running JMail version "..set.version..". Don't worry, your password is hashed and salted with SHA-3.\n\nTHIS IS AN AUTOMATED MESSAGE, DO NOT REPLY."}))
         f.close()
         rednet.send(cid, true, "JMail")
       else
@@ -145,7 +191,7 @@ local function connect(cid)
       local f = fs.open("/mail/"..msg[2].."/pass", "r")
       local ps = f.readAll()
       f.close()
-      if msg[3]==blake.digest(ps, msg[4]):toHex() then
+      if type(connected[cid])=="string" and msg[3]==blake.digest(ps, connected[cid]):toHex() then
         local un=msg[2]
       rednet.send(cid, true, "JMail")
       while true do
@@ -198,11 +244,11 @@ local function connect(cid)
         elseif msg[1]=="VRFY" and type(msg[2])=="string" then
           rednet.send(cid, fs.isDir("/mail/"..msg[2].."/pass"), "JMail")
         elseif msg[1]=="DATA" and pcall(function() textutils.serialize(msg) end) then
-          table.remove(msg, 1)
-          table.insert(msg, 2, un.."@"..set.hostname)
+          msg[1]=getDate()
           repeat
-            f=math.random(1, 10000)
+            f=math.random(10000)
           until not fs.exists("/mail/send/"..f)
+          table.insert(msg, 2, un.."@"..set.hostname)
           f=fs.open("/mail/send/"..f, "w")
           f.write(textutils.serialize(msg))
           f.close()
@@ -262,30 +308,35 @@ local function connector(n)
        rednet.send(id, "Server shutting down", "JMail")
      end
    elseif type(msg)=="table" and msg[1]=="SENDMAIL" then
-     if set.useblist and set.blist[id] then
+     if set.useblist and set.blist[id] and not msg[2][2]:find("sendmail@") then
        if set.logverbose then logEvent(id.." sendmail is blacklisted") end
-       rednet.send(id, {"SENDMAIL", {msg[2][1], "sendmail@"..set.hostname, {msg[2][2]}, "Mailer error: Blacklist", "The server at "..set.hostname.." does not allow mail from this server."}, msg[2][2]}, "JMail")
-     elseif set.usewlist and not set.wlist[id] then
+       rednet.send(id, {"SENDMAIL", {getDate(), "sendmail@"..set.hostname, {msg[2][2]}, "Mailer error: Blacklist", "The server at "..set.hostname.." does not allow mail from this server."}, msg[2][2]}, "JMail")
+     elseif set.usewlist and not set.wlist[id] and not msg[2][2]:find("sendmail@") then
        if set.logverbose then logEvent(id.." sendmail is not whitelisted.") end
-       rednet.send(id, {"SENDMAIL", {msg[2][1], "sendmail@"..set.hostname, {msg[2][2]}, "Mailer error: Unauthorized", "The remote server at "..set.hostname.." has not authorized this server to send mail to it."}, msg[2][2]}, "JMail")
-     elseif set.getmailremote then
+       rednet.send(id, {"SENDMAIL", {getDate(), "sendmail@"..set.hostname, {msg[2][2]}, "Mailer error: Unauthorized", "The remote server at "..set.hostname.." has not authorized this server to send mail to it."}, msg[2][2]}, "JMail")
+     elseif set.getmailremote or msg[2][2]:find("sendmail@") then
        if set.logverbose then logEvent(id.." sendmail connected") end
-       if fs.exists("/mail/"..msg[3].."/pass") then
-         local i=""
-         while fs.exists("/mail/"..msg[3].."/mail/"..msg[2][4]..i.." from "..msg[2][2]) do
-         if i=="" then i=0 end
-           i=i+1
+       if fs.exists("/mail/"..string.match(msg[3], "%a+").."/pass") then
+         if getSize("/mail/"..string.match(msg[3], "%a+"))>set.maxsize and set.maxsize>1 and not msg[2][2]:find("sendmail@") then
+           rednet.send(id, {"SENDMAIL", {msg[2][1], "sendmail@"..set.hostname, {msg[2][2]}, "Mailer error: Inbox full", "The inbox of user "..msg[3].." is full."}, msg[2][2]}, "JMail")
+         else
+           msg[3]=string.match(msg[3], "%a+")
+           local i=""
+           while fs.exists("/mail/"..msg[3].."/mail/"..msg[2][4]..i.." from "..msg[2][2]) do
+             if i=="" then i=0 end
+             i=i+1
+           end
+           local h = fs.open("/mail/"..msg[3].."/mail/"..msg[2][4]..i.." from "..msg[2][2], "w")
+           h.write(textutils.serialize(msg[2]))
+           h.close()
          end
-         local h = fs.open("/mail/"..msg[3].."/mail/"..msg[2][4]..i.." from "..msg[2][2], "w")
-         h.write(textutils.serialize(msg[2]))
-         h.close()
        else
          if set.logverbose then logEvent("Invalid user "..msg[3]) end
-         rednet.send(id, {"SENDMAIL", {msg[2][1], "sendmail@"..set.hostname, {msg[2][2]}, "Mailer error: Bad user", "The user "..msg[3].." does not exist."}, msg[2][2]}, "JMail")
+         rednet.send(id, {"SENDMAIL", {getDate(), "sendmail@"..set.hostname, {msg[2][2]}, "Mailer error: Bad user", "The user "..msg[3].." does not exist."}, msg[2][2]}, "JMail")
        end
      else
        if set.logverbose then logEvent(id.."'s sendmail rejected") end
-       rednet.send(id, {"SENDMAIL", {msg[2][1], "sendmail@"..set.hostname, {msg[2][2]}, "Mailer error: Disabled", "The remote server has sendmail disabled."},msg[2][2]}, "JMail")
+       rednet.send(id, {"SENDMAIL", {getDate(), "sendmail@"..set.hostname, {msg[2][2]}, "Mailer error: Disabled", "The remote server has sendmail disabled."},msg[2][2]}, "JMail")
      end
    end
   end
@@ -357,9 +408,11 @@ local function console()
            shell.run("edit /JMailServer.cfg")
          elseif tcmd[2]=="reload" then
            local h = fs.open("JMailServer.cfg", "r")
+           rednet.unhost("JMail")
            set=textutils.unserialize(h.readAll())
            set.run=true
            set.blist[os.getComputerID()]=true
+           rednet.host("JMail", set.hostname)
            h.close()
            print("Done!")
          elseif tcmd[2]=="default" then
@@ -437,14 +490,20 @@ local function sendmail()
           srv=srv()
           if srv==set.hostname or tonumber(srv)==os.computerID() then
             if fs.exists("/mail/"..un.."/pass") then
-              local i=""
-              while fs.exists("/mail/"..un.."/mail/"..tab[4]..i.." from "..tab[2]) do
-                if i=="" then i=0 end
-                i=i+1
+              if getSize("/mail/"..un.."/mail")>set.maxsize and set.maxsize>1 then
+                f=fs.open("/mail/send/"..a, "w")
+                f.write(textutils.serialize({getDate(), "sendmail@"..set.hostname, {tab[2]}, "Mailer error: Inbox full", "The inbox of user "..un.." is full."}))
+                f.close()
+              else
+                local i=""
+                while fs.exists("/mail/"..un.."/mail/"..tab[4]..i.." from "..tab[2]) do
+                  if i=="" then i=0 end
+                  i=i+1
+                end
+                f=fs.open("/mail/"..un.."/mail/"..tab[4]..i.." from "..tab[2], "w")
+                f.write(textutils.serialize(tab))
+                f.close()
               end
-              f=fs.open("/mail/"..un.."/mail/"..tab[4]..i.." from "..tab[2], "w")
-              f.write(textutils.serialize(tab))
-              f.close()
             end
           else
             if tonumber(srv) then
@@ -453,11 +512,11 @@ local function sendmail()
                 if cache[m]==tonumber(srv) then eh=true break end
               end
               if eh then
-                rednet.send(tonumber(srv), {"SENDMAIL", tab, un}, "JMail")
+                rednet.send(tonumber(srv), {"SENDMAIL", tab, un.."@"..srv}, "JMail")
               else
                 if set.logverbose then logEvent("Could not find server "..srv) end
                 f=fs.open("/mail/send/"..a, "w")
-                f.write(textutils.serialize({tab[1], "sendmail@"..set.hostname, {tab[2]}, "Mailer error: Bad server", "The server refrenced in address "..msg[3][i].." does not exist."}))
+                f.write(textutils.serialize({getDate(), "sendmail@"..set.hostname, {tab[2]}, "Mailer error: Bad server", "The server refrenced in address "..msg[3][i].." does not exist."}))
                 f.close()
               end
             else
@@ -465,16 +524,16 @@ local function sendmail()
               if not srv then
                 if set.logverbose then logEvent("Could not find server") end
                 f=fs.open("/mail/send/"..a, "w")
-                f.write(textutils.serialize({tab[1], "sendmail@"..set.hostname, {tab[2]}, "Mailer error: Bad server", "The server refrenced in address "..msg[3][i].." does not exists."}))
+                f.write(textutils.serialize({getDate(), "sendmail@"..set.hostname, {tab[2]}, "Mailer error: Bad server", "The server refrenced in address "..msg[3][i].." does not exists."}))
                 f.close()
               end
-              rednet.send(srv, {"SENDMAIL", tab, un}, "JMail")
+              rednet.send(srv, {"SENDMAIL", tab, un.."@"..srv}, "JMail")
             end
           end
         else
           if set.logverbose then logEvent("Invalid email "..tab[3][n]) end
           f=fs.open("/mail/send/"..a, "w")
-          f.write(textutils.serialize({tab[1], "sendmail@"..set.hostname, {tab[2]}, "Mailer error: Bad address", "The email address "..tab[3][n].." is invalid."}))
+          f.write(textutils.serialize({getDate(), "sendmail@"..set.hostname, {tab[2]}, "Mailer error: Bad address", "The email address "..tab[3][n].." is invalid."}))
           f.close()
         end
       end
@@ -489,7 +548,7 @@ logEvent("Registered JMail server as "..set.hostname)
 parallel.waitForAny(
   function()
     parallel.waitForAll(
-      console,
+      function() console() os.pullEvent=pull end,
       function() connector(true) end
     )
   end,
@@ -497,6 +556,5 @@ parallel.waitForAny(
 )
 logEvent("Server stopped.")
 log.close()
-os.pullEvent=pull
-shell.setDir(shelldir)
+rednet.unhost("JMail")
 print("Server stopped.")
