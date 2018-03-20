@@ -22,7 +22,7 @@ local function resolvePath(path, op, p2)
   local current=perms
   for i=1, #dirs do
     if i==#dirs and op=="del" then
-      table.remove(current, dirs[i])
+      current[dirs[i]]=nil
       return
     end
     if i==#dirs and op=="make" then

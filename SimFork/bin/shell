@@ -1,24 +1,23 @@
 local dir = fs.combine(system.dir.."/home/"..system.username(),"")
 local home=dir..""
-local path = {system.dir.."/bin", system.dir.."/usr/bin/", "/rom/programs/", "/rom/programs/fun", "/rom/programs/rednet"}
+local path = system.dir.."/bin:"..system.dir.."/usr/bin/:/rom/programs/:/rom/programs/fun:/rom/programs/rednet"
 if term.isColour() then
-  table.insert(path, "/rom/programs/advanced")
-  table.insert(path, "/rom/programs/fun/advanced")
+  path=path..":/rom/programs/advanced:/rom/programs/fun/advanced"
 end
 if turtle then
-  table.insert(path, "/rom/programs/turtle")
+  path=path..":/rom/programs/turtle"
 end
 if http then
-  table.insert(path, "/rom/programs/http")
+  path=path..":/rom/programs/http"
 end
 if pocket then
-  table.insert(path, "/rom/programs/pocket")
+  path=path..":/rom/programs/pocket"
 end
 if commands then
-  table.insert(path, "/rom/programs/command")
+  path=path..":/rom/programs/command"
 end
 if select(3, system.username())==0 then
-  table.insert(path, system.dir.."/sbin")
+  path=path..":"..system.dir.."/sbin"
 end
 
 local aliases = {
@@ -63,8 +62,12 @@ function newShell.resolveProgram(thing)
     if fs.exists(thing) and not fs.isDir(thing) then return thing end
   end
   local nThing
-  for i=1, #path do
-    nThing = fs.combine(newShell.resolve(path[i]), thing)
+  local tpath={}
+  for x in path:gmatch("[^:]+") do
+    table.insert(tpath, x)
+  end
+  for i=1, #tpath do
+    nThing = fs.combine(newShell.resolve(tpath[i]), thing)
     if fs.exists(nThing) and not fs.isDir(nThing) then return nThing end
   end
   if thing:sub(-4)~=".lua" then return newShell.resolveProgram(thing..".lua") end
@@ -77,6 +80,43 @@ system.pwd = newShell.dir
 function newShell.setDir(nDir)
   dir=nDir
 end
+function newShell.path()
+  return path
+end
+function newShell.setPath(nPath)
+  path=nPath
+end
+function newShell.run(...)
+  local temp={}
+  local cmd=table.concat({...}, " ")
+  while cmd:find("(.-) && ") do
+    local _,y,z=cmd:find("(.-) && ")
+    if not newShell.run(z) then return false end
+    cmd=cmd:sub(y+1)
+  end
+  local inQuote=false
+  for k in cmd:gmatch("[^ \t]+") do
+    if inQuote then
+      temp[#temp]=temp[#temp].." "..k
+    else
+      table.insert(temp, k)
+    end
+    if (not inQuote) and (k:sub(1,1)=="\"" or k:sub(1,1)=="\'") then
+      inQuote=k:sub(1,1)
+    end
+    if inQuote and (k:sub(-1)=="\"" or k:sub(-1)=="\'") then
+      inQuote=false
+    end
+  end
+  if newShell.resolveProgram(temp[1]) then
+    return os.run({
+      shell=newShell, 
+      multishell=multishell,
+      }, newShell.resolveProgram(temp[1]), table.unpack(temp, 2))
+  else
+    printError("Unknown command: "..temp[1])
+  end
+end
 local ok, err
 while true do
   ok, err = pcall(function() 
@@ -86,7 +126,7 @@ while true do
     print("(Crappy) SimFork Shell")
     while true do
       term.setTextColour(termColours[3])
-      write(system.username().."@"..(os.computerLabel() or "SimFork"..os.computerID())..":"..dir.."$")
+      write(system.username().."@"..(os.computerLabel() or "SimFork"..os.computerID())..":"..((function() if dir.."/"==home or dir==home then return "~" else return dir end end)()).."$")
       term.setTextColour(termColours[2])
       table.insert(cmdHist, read(nil, cmdHist))
       if cmdHist[#cmdHist]=="" then
@@ -94,15 +134,7 @@ while true do
       else
         if cmdHist[#cmdHist]=="exit" then return end
         cmdHist[#cmdHist]=cmdHist[#cmdHist]:gsub(" ~", " /"..home)
-        temp={}
-        for k in cmdHist[#cmdHist]:gmatch("[^ \t]+") do
-          table.insert(temp, k)
-        end
-        if newShell.resolveProgram(temp[1]) then
-          os.run({["shell"]=newShell, ["multishell"]=multishell}, newShell.resolveProgram(temp[1]), table.unpack(temp, 2))
-        else
-          printError("Unknown command: "..table.concat(temp, " "))
-        end
+        newShell.run(cmdHist[#cmdHist])
       end
     end
   end)
